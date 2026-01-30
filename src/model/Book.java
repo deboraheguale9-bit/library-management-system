@@ -1,8 +1,10 @@
 package model;
 
 import java.time.Year;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class Book {
+public abstract class Book implements Searchable, Borrowable {
     private String isbn;
     private String title;
     private String author;
@@ -24,7 +26,6 @@ public abstract class Book {
                 title, author, publicationYear, isbn);
     }
 
-    // ⭐ ADD THIS METHOD IF MISSING ⭐
     public void setAvailable(boolean available) {
         this.available = available;
     }
@@ -57,17 +58,117 @@ public abstract class Book {
     public abstract String getType();
     public abstract String getSpecificDetails();
 
-    // Getters and Setters
-    public String getIsbn() { return isbn; }
-    public void setIsbn(String isbn) { this.isbn = isbn; }
+    // ====================
+    // SEARCHABLE INTERFACE
+    // ====================
+    @Override
+    public List<Book> searchByTitle(String title) {
+        List<Book> result = new ArrayList<>();
+        if (this.title.toLowerCase().contains(title.toLowerCase())) {
+            result.add(this);
+        }
+        return result;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    @Override
+    public List<Book> searchByAuthor(String author) {
+        List<Book> result = new ArrayList<>();
+        if (this.author.toLowerCase().contains(author.toLowerCase())) {
+            result.add(this);
+        }
+        return result;
+    }
 
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
+    @Override
+    public Book searchByISBN(String isbn) {
+        if (this.isbn.equals(isbn)) {
+            return this;
+        }
+        return null;
+    }
 
-    public int getPublicationYear() { return publicationYear; }
+    // Default method from Searchable interface
+    @Override
+    public List<Book> search(String query) {
+        List<Book> results = searchByTitle(query);
+        results.addAll(searchByAuthor(query));
+
+        Book byISBN = searchByISBN(query);
+        if (byISBN != null && !results.contains(byISBN)) {
+            results.add(byISBN);
+        }
+
+        return results;
+    }
+
+    // ====================
+    // BORROWABLE INTERFACE
+    // ====================
+    @Override
+    public boolean borrow(Member member) {
+        if (isAvailable() && member.canBorrowMore()) {
+            setAvailable(false);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean returnItem() {
+        if (!isAvailable()) {
+            setAvailable(true);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean getAvailability() {
+        return isAvailable();
+    }
+
+    // Default methods from Borrowable interface
+    @Override
+    public boolean canBeBorrowed() {
+        return getAvailability();
+    }
+
+    @Override
+    public String getBorrowStatus() {
+        return getAvailability() ? "Available" : "Not Available";
+    }
+
+    // ====================
+    // GETTERS AND SETTERS
+    // ====================
+    public String getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public int getPublicationYear() {
+        return publicationYear;
+    }
+
     public void setPublicationYear(int publicationYear) {
         int currentYear = Year.now().getValue();
         if (publicationYear <= currentYear && publicationYear > 1000) {
@@ -77,7 +178,10 @@ public abstract class Book {
         }
     }
 
-    public int getCopies() { return copies; }
+    public int getCopies() {
+        return copies;
+    }
+
     public void setCopies(int copies) {
         if (copies >= 0) {
             this.copies = copies;
