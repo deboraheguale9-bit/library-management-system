@@ -25,6 +25,7 @@ public abstract class User {
         this.passwordHash = passwordHash;
         this.role = role;
         this.isActive = true;
+
     }
 
     // Methods
