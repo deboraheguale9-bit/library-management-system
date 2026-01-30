@@ -42,5 +42,6 @@ public class Main {
         System.out.println("2. Encapsulation: Private fields with getters");
         System.out.println("3. Polymorphism: User reference to Admin object");
         System.out.println("4. Abstraction: Abstract User class");
+        System.out.println("yay");
     }
 }
