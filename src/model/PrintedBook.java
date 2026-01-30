@@ -32,7 +32,7 @@ public class PrintedBook extends Book {
     }
 
     public boolean reserve() {
-        if (!isReserved && isAvailable()) {
+        if (!isReserved && super.isAvailable()) {  // Use super.isAvailable() to check parent availability
             isReserved = true;
             return true;
         }
@@ -61,21 +61,53 @@ public class PrintedBook extends Book {
 
     @Override
     public boolean isAvailable() {
+        // A printed book is available if:
+        // 1. It's not reserved AND
+        // 2. The parent Book class says it's available (copies > 0, available = true)
         return !isReserved && super.isAvailable();
     }
 
-    // Getters and Setters
-    public String getShelfLocation() { return shelfLocation; }
-    public void setShelfLocation(String shelfLocation) { this.shelfLocation = shelfLocation; }
-
-    public String getCondition() { return condition; }
-    public void setCondition(String condition) { this.condition = condition; }
-
-    public int getEdition() { return edition; }
-    public void setEdition(int edition) {
-        if (edition > 0) this.edition = edition;
+    @Override
+    public void setAvailable(boolean available) {
+        // If setting to unavailable, also cancel reservation
+        if (!available) {
+            isReserved = false;
+        }
+        super.setAvailable(available);  // Call parent's setAvailable
     }
 
-    public boolean isReserved() { return isReserved; }
-    public void setReserved(boolean reserved) { isReserved = reserved; }
+    // Getters and Setters
+    public String getShelfLocation() {
+        return shelfLocation;
+    }
+
+    public void setShelfLocation(String shelfLocation) {
+        this.shelfLocation = shelfLocation;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
+    }
+
+    public int getEdition() {
+        return edition;
+    }
+
+    public void setEdition(int edition) {
+        if (edition > 0) {
+            this.edition = edition;
+        }
+    }
+
+    public boolean isReserved() {
+        return isReserved;
+    }
+
+    public void setReserved(boolean reserved) {
+        isReserved = reserved;
+    }
 }

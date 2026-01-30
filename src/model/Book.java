@@ -1,117 +1,93 @@
 package model;
 
+import java.time.Year;
+
 public abstract class Book {
     private String isbn;
     private String title;
     private String author;
     private int publicationYear;
+    private boolean available;
     private int copies;
 
     public Book(String isbn, String title, String author, int publicationYear, int copies) {
-        validateIsbn(isbn);
-        validateYear(publicationYear);
-        validateCopies(copies);
-
         this.isbn = isbn;
         this.title = title;
         this.author = author;
         this.publicationYear = publicationYear;
+        this.available = true;
         this.copies = copies;
     }
 
-    // Validation methods
-    private void validateIsbn(String isbn) {
-        if (isbn == null || isbn.trim().isEmpty()) {
-            throw new IllegalArgumentException("ISBN cannot be null or empty");
-        }
-        // Basic ISBN format check (10 or 13 digits with optional hyphens)
-        String cleanedIsbn = isbn.replace("-", "");
-        if (!cleanedIsbn.matches("\\d{10}|\\d{13}")) {
-            throw new IllegalArgumentException("Invalid ISBN format. Must be 10 or 13 digits");
-        }
+    public String getDetails() {
+        return String.format("\"%s\" by %s (%d) - ISBN: %s",
+                title, author, publicationYear, isbn);
     }
 
-    private void validateYear(int year) {
-        int currentYear = java.time.Year.now().getValue();
-        if (year < 1000 || year > currentYear + 2) { // Allow books up to 2 years in future
-            throw new IllegalArgumentException("Invalid publication year: " + year);
-        }
-    }
-
-    private void validateCopies(int copies) {
-        if (copies < 0) {
-            throw new IllegalArgumentException("Copies cannot be negative");
-        }
-    }
-
-    // Abstract methods that subclasses MUST implement
-    public abstract String getType();
-    public abstract String getSpecificDetails();
-
-    // Common methods for all books
-    public void borrow() {
-        if (isAvailable()) {
-            copies--;
-            System.out.println("Book borrowed: " + title);
-        } else {
-            System.out.println("No copies available: " + title);
-        }
-    }
-
-    public void returnBook() {
-        copies++;
-        System.out.println("Book returned: " + title);
+    // ⭐ ADD THIS METHOD IF MISSING ⭐
+    public void setAvailable(boolean available) {
+        this.available = available;
     }
 
     public boolean isAvailable() {
-        return copies > 0;
+        return available && copies > 0;
     }
 
-    public String getBookInfo() {
-        return String.format("ISBN: %s | Title: %s | Author: %s | Year: %d | Copies: %d",
-                isbn, title, author, publicationYear, copies);
+    public boolean validateISBN() {
+        String cleanISBN = isbn.replaceAll("[\\s-]", "");
+
+        if (cleanISBN.length() != 10 && cleanISBN.length() != 13) {
+            return false;
+        }
+
+        if (cleanISBN.length() == 10) {
+            if (!cleanISBN.matches("[0-9]{9}[0-9X]")) {
+                return false;
+            }
+        } else {
+            if (!cleanISBN.matches("[0-9]{13}")) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    public String getFullInfo() {
-        return getBookInfo() + " | Type: " + getType() + " | Details: " + getSpecificDetails();
-    }
+    // Abstract methods for subclasses
+    public abstract String getType();
+    public abstract String getSpecificDetails();
 
-    // Getters and Setters with validation
+    // Getters and Setters
     public String getIsbn() { return isbn; }
-
-    public void setIsbn(String isbn) {
-        validateIsbn(isbn);
-        this.isbn = isbn;
-    }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
 
     public String getTitle() { return title; }
-    public void setTitle(String title) {
-        if (title != null && !title.trim().isEmpty()) {
-            this.title = title;
-        }
-    }
+    public void setTitle(String title) { this.title = title; }
 
     public String getAuthor() { return author; }
-    public void setAuthor(String author) {
-        if (author != null && !author.trim().isEmpty()) {
-            this.author = author;
-        }
-    }
+    public void setAuthor(String author) { this.author = author; }
 
     public int getPublicationYear() { return publicationYear; }
     public void setPublicationYear(int publicationYear) {
-        validateYear(publicationYear);
-        this.publicationYear = publicationYear;
+        int currentYear = Year.now().getValue();
+        if (publicationYear <= currentYear && publicationYear > 1000) {
+            this.publicationYear = publicationYear;
+        } else {
+            throw new IllegalArgumentException("Invalid publication year");
+        }
     }
 
     public int getCopies() { return copies; }
     public void setCopies(int copies) {
-        validateCopies(copies);
-        this.copies = copies;
+        if (copies >= 0) {
+            this.copies = copies;
+        } else {
+            throw new IllegalArgumentException("Copies cannot be negative");
+        }
     }
 
     @Override
     public String toString() {
-        return getFullInfo();
+        return getDetails();
     }
 }
