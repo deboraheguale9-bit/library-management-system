@@ -14,3 +14,4 @@ public interface BookBorrowable {
         return getAvailability() ? "Available" : "Not Available";
     }
 }
+
