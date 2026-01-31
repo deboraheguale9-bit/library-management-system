@@ -2,7 +2,9 @@ package model;
 
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class Book implements BookSearchable, BookBorrowable {
     private String isbn;
@@ -13,25 +15,86 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     private int copies;
 
     public Book(String isbn, String title, String author, int publicationYear, int copies) {
-        this.isbn = isbn;
-        this.title = title;
-        this.author = author;
-        this.publicationYear = publicationYear;
-        this.available = true;
-        this.copies = copies;
+        setIsbn(isbn);  // Use setters for validation
+        setTitle(title);
+        setAuthor(author);
+        setPublicationYear(publicationYear);
+        setCopies(copies);
+        this.available = (copies > 0);
     }
 
+    // ====================
+    // PROFILE METHOD FOR SQLITE
+    // ====================
+
+    /**
+     * Returns book data as Map for SQLite database storage
+     * Format matches database column names
+     */
+    public Map<String, Object> getProfile() {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("isbn", isbn);
+        profile.put("title", title);
+        profile.put("author", author);
+        profile.put("publication_year", publicationYear);
+        profile.put("copies", copies);
+        profile.put("available", isAvailable() ? 1 : 0); // SQLite uses integers for booleans
+        profile.put("book_type", getType()); // "E-Book" or "Printed Book"
+
+        // Subclasses will add their specific fields by overriding this method
+        return profile;
+    }
+
+    // ====================
+    // DATABASE HELPER METHODS
+    // ====================
+
+    /**
+     * Creates a Book object from database result set
+     * Static factory method for repository use
+     */
+    public static Book fromMap(Map<String, Object> data) {
+        String isbn = (String) data.get("isbn");
+        String title = (String) data.get("title");
+        String author = (String) data.get("author");
+        int pubYear = (int) data.get("publication_year");
+        int copies = (int) data.get("copies");
+        String bookType = (String) data.get("book_type");
+
+        // Determine which subclass to create based on book_type
+        if ("E-Book".equals(bookType)) {
+            double fileSize = (double) data.get("file_size_mb");
+            String format = (String) data.get("format");
+            String downloadLink = (String) data.get("download_link");
+            boolean drmProtected = (int) data.get("drm_protected") == 1;
+
+            return new EBook(isbn, title, author, pubYear, copies,
+                    fileSize, format, downloadLink, drmProtected);
+        } else if ("Printed Book".equals(bookType)) {
+            String shelfLocation = (String) data.get("shelf_location");
+            String condition = (String) data.get("condition");
+            int edition = (int) data.get("edition");
+
+            return new PrintedBook(isbn, title, author, pubYear, copies,
+                    shelfLocation, condition, edition);
+        }
+
+        throw new IllegalArgumentException("Unknown book type: " + bookType);
+    }
+
+    // ====================
+    // ABSTRACT METHODS
+    // ====================
+    public abstract String getType();
+    public abstract String getSpecificDetails();
+
+    // ====================
+    // BOOK DATA METHODS
+    // ====================
     public String getDetails() {
-        return String.format("\"%s\" by %s (%d) - ISBN: %s",
-                title, author, publicationYear, isbn);
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
-
-    public boolean isAvailable() {
-        return available && copies > 0;
+        return String.format("\"%s\" by %s (%d) - ISBN: %s [%d copy/copies, %s]",
+                title, author, publicationYear, isbn, copies,
+                isAvailable() ? "Available" : "Checked Out");
     }
 
     public boolean validateISBN() {
@@ -54,12 +117,42 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return true;
     }
 
-    // Abstract methods for subclasses
-    public abstract String getType();
-    public abstract String getSpecificDetails();
+    // ====================
+    // AVAILABILITY MANAGEMENT
+    // ====================
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public boolean isAvailable() {
+        return available && copies > 0;
+    }
+
+    /**
+     * Borrow a copy of this book
+     * @return true if successful, false if no copies available
+     */
+    public boolean borrowCopy() {
+        if (copies > 0) {
+            copies--;
+            this.available = (copies > 0);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Return a copy of this book
+     * @return true if successful
+     */
+    public boolean returnCopy() {
+        copies++;
+        this.available = true;
+        return true;
+    }
 
     // ====================
-    // SEARCHABLE INTERFACE
+    // BOOKSEARCHABLE INTERFACE
     // ====================
     @Override
     public List<Book> searchByTitle(String title) {
@@ -102,24 +195,19 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     }
 
     // ====================
-    // BORROWABLE INTERFACE
+    // BOOKBORROWABLE INTERFACE
     // ====================
     @Override
     public boolean borrow(Member member) {
         if (isAvailable() && member.canBorrowMore()) {
-            setAvailable(false);
-            return true;
+            return borrowCopy();
         }
         return false;
     }
 
     @Override
     public boolean returnItem() {
-        if (!isAvailable()) {
-            setAvailable(true);
-            return true;
-        }
-        return false;
+        return returnCopy();
     }
 
     @Override
@@ -127,7 +215,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return isAvailable();
     }
 
-    // Default methods from Borrowable interface
+    // Default methods from BookBorrowable interface
     @Override
     public boolean canBeBorrowed() {
         return getAvailability();
@@ -139,14 +227,17 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     }
 
     // ====================
-    // GETTERS AND SETTERS
+    // GETTERS AND SETTERS WITH VALIDATION
     // ====================
     public String getIsbn() {
         return isbn;
     }
 
     public void setIsbn(String isbn) {
-        this.isbn = isbn;
+        if (isbn == null || isbn.trim().isEmpty()) {
+            throw new IllegalArgumentException("ISBN cannot be null or empty");
+        }
+        this.isbn = isbn.trim();
     }
 
     public String getTitle() {
@@ -154,7 +245,10 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     }
 
     public void setTitle(String title) {
-        this.title = title;
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Title cannot be null or empty");
+        }
+        this.title = title.trim();
     }
 
     public String getAuthor() {
@@ -162,7 +256,10 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     }
 
     public void setAuthor(String author) {
-        this.author = author;
+        if (author == null || author.trim().isEmpty()) {
+            throw new IllegalArgumentException("Author cannot be null or empty");
+        }
+        this.author = author.trim();
     }
 
     public int getPublicationYear() {
@@ -174,7 +271,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         if (publicationYear <= currentYear && publicationYear > 1000) {
             this.publicationYear = publicationYear;
         } else {
-            throw new IllegalArgumentException("Invalid publication year");
+            throw new IllegalArgumentException("Invalid publication year: " + publicationYear);
         }
     }
 
@@ -183,15 +280,34 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     }
 
     public void setCopies(int copies) {
-        if (copies >= 0) {
-            this.copies = copies;
-        } else {
-            throw new IllegalArgumentException("Copies cannot be negative");
+        if (copies < 0) {
+            throw new IllegalArgumentException("Copies cannot be negative: " + copies);
         }
+        this.copies = copies;
+        this.available = (copies > 0); // Update availability
     }
 
+    // ====================
+    // OVERRIDDEN METHODS
+    // ====================
     @Override
     public String toString() {
         return getDetails();
+    }
+
+    // ====================
+    // EQUALS & HASHCODE (Important for collections)
+    // ====================
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Book book = (Book) obj;
+        return isbn.equals(book.isbn);
+    }
+
+    @Override
+    public int hashCode() {
+        return isbn.hashCode();
     }
 }
