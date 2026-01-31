@@ -255,6 +255,7 @@ public class Main {
         System.out.println("=========================================");
         System.out.println("\n🎉 LIBRARY MANAGEMENT SYSTEM READY FOR GUI IMPLEMENTATION!");
         System.out.println("Next step: Create JavaFX interface for user interaction.");
+        System.out.println("yayyy");
     }
 
     private static int countClasses() {
