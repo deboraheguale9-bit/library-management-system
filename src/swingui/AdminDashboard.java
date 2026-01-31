@@ -9,13 +9,14 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdminDashboard extends JFrame {
     private User currentUser;
     private UserService userService;
     private JTable userTable;
-    private DefaultTableModel tableModel;
+    private UserTableModel tableModel;
 
     public AdminDashboard(User loggedInUser) {
         this.currentUser = loggedInUser;
@@ -60,14 +61,8 @@ public class AdminDashboard extends JFrame {
         // Table panel
         JPanel tablePanel = new JPanel(new BorderLayout());
 
-        // Create table model
-        String[] columns = {"ID", "Name", "Email", "Phone", "Username", "Role", "Active"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Make table non-editable
-            }
-        };
+        // Create table model using UserTableModel
+        tableModel = new UserTableModel(new ArrayList<>());
 
         userTable = new JTable(tableModel);
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -127,24 +122,11 @@ public class AdminDashboard extends JFrame {
     }
 
     private void loadUsers() {
-        // Clear table
-        tableModel.setRowCount(0);
-
         // Get all users from service
         List<User> users = userService.getAllUsers();
 
-        // Add users to table
-        for (User user : users) {
-            tableModel.addRow(new Object[]{
-                    user.getId(),
-                    user.getName(),
-                    user.getEmail(),
-                    user.getMobile(),
-                    user.getUsername(),
-                    user.getRole().toString(),
-                    user.isActive() ? "Yes" : "No"
-            });
-        }
+        // Update table model with users
+        tableModel.setUsers(users);
 
         JOptionPane.showMessageDialog(this,
                 "Loaded " + users.size() + " users",
@@ -295,8 +277,7 @@ public class AdminDashboard extends JFrame {
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
-        User user = userService.getUserById(userId);
+        User user = tableModel.getUserAt(selectedRow);
 
         if (user == null) {
             JOptionPane.showMessageDialog(this, "User not found!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -451,20 +432,24 @@ public class AdminDashboard extends JFrame {
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
-        String userName = (String) tableModel.getValueAt(selectedRow, 1);
+        User user = tableModel.getUserAt(selectedRow);
+
+        if (user == null) {
+            JOptionPane.showMessageDialog(this, "User not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         // Confirm deletion
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete user: " + userName + "?\nThis action cannot be undone.",
+                "Are you sure you want to delete user: " + user.getName() + "?\nThis action cannot be undone.",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (userService.deleteUser(userId)) {
+            if (userService.deleteUser(user.getId())) {
+                tableModel.removeUser(selectedRow);
                 JOptionPane.showMessageDialog(this, "User deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                loadUsers();
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to delete user!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -475,24 +460,11 @@ public class AdminDashboard extends JFrame {
         String searchTerm = JOptionPane.showInputDialog(this, "Enter name to search:", "Search Users", JOptionPane.QUESTION_MESSAGE);
 
         if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            // Clear table
-            tableModel.setRowCount(0);
-
             // Search users
             List<User> searchResults = userService.searchUsersByName(searchTerm.trim());
 
-            // Add results to table
-            for (User user : searchResults) {
-                tableModel.addRow(new Object[]{
-                        user.getId(),
-                        user.getName(),
-                        user.getEmail(),
-                        user.getMobile(),
-                        user.getUsername(),
-                        user.getRole().toString(),
-                        user.isActive() ? "Yes" : "No"
-                });
-            }
+            // Update table model with search results
+            tableModel.setUsers(searchResults);
 
             JOptionPane.showMessageDialog(this,
                     "Found " + searchResults.size() + " user(s)",

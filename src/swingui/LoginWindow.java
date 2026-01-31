@@ -271,3 +271,4 @@ public class LoginWindow extends JFrame {
         SwingUtilities.invokeLater(() -> new LoginWindow());
     }
 }
+
