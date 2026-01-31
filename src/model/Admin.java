@@ -48,3 +48,4 @@ public class Admin extends User {
     public int getAdminLevel() { return adminLevel; }
     public void setAdminLevel(int adminLevel) { this.adminLevel = adminLevel; }
 }
+
