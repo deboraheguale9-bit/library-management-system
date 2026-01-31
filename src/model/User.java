@@ -1,34 +1,31 @@
 package model;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * Abstract User class for Library Management System.
- * Implements SHA-256 password hashing with salt for security.
- * Designed for file-based persistence (JSON) and Swing UI integration.
+ * Abstract User class for Library Management System
+ * Implements SHA-256 password hashing with salt for security
  */
 public abstract class User {
-
-    // User attributes (all private - Encapsulation)
+    // User attributes
     private String id;
     private String name;
     private String email;
     private String mobile;
     private String username;
-    private String passwordHash;  // Format: "salt:hashedPassword" in Base64
+    private String passwordHash;  // Stores "salt:hashedPassword" in Base64
     private UserRole role;
     private boolean isActive;
 
-    // ================= CONSTRUCTORS =================
-
+    // ================= CONSTRUCTOR =================
     /**
-     * Creates a new User with hashed password.
-     * Used when creating brand new users.
-     *
-     * @param id Unique user ID (e.g., "ADM001", "LIB002", "MEM003")
+     * Creates a new User with hashed password
+     * @param id Unique user ID
      * @param name Full name
      * @param email Email address
      * @param mobile Phone number
@@ -43,46 +40,19 @@ public abstract class User {
         this.email = email;
         this.mobile = mobile;
         this.username = username;
-        this.passwordHash = hashPassword(plainPassword);  // Auto-hash on creation
+        this.passwordHash = hashPassword(plainPassword);  // Hash on creation
         this.role = role;
         this.isActive = true;  // New users are active by default
-    }
-
-    /**
-     * Alternative constructor for loading users from file.
-     * Use this when you already have the hashed password.
-     *
-     * @param id User ID
-     * @param name Full name
-     * @param email Email
-     * @param mobile Phone
-     * @param username Username
-     * @param passwordHash Already hashed password (from file)
-     * @param role User role
-     * @param isActive Active status
-     */
-    public User(String id, String name, String email, String mobile,
-                String username, String passwordHash, UserRole role, boolean isActive) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.mobile = mobile;
-        this.username = username;
-        this.passwordHash = passwordHash;  // Already hashed from file
-        this.role = role;
-        this.isActive = isActive;
     }
 
     // ================= AUTHENTICATION METHODS =================
 
     /**
-     * Attempts to authenticate the user.
-     * Called from Swing login screen.
-     *
-     * @param passwordAttempt Plain text password from login form
+     * Attempts to log in the user
+     * @param passwordAttempt Plain text password attempt
      * @return true if login successful, false otherwise
      */
-    public boolean authenticate(String passwordAttempt) {
+    public boolean login(String passwordAttempt) {
         if (!isActive) {
             return false;  // Inactive users cannot log in
         }
@@ -90,43 +60,24 @@ public abstract class User {
     }
 
     /**
-     * Changes the user's password.
-     * Called from Swing "Change Password" dialog.
-     *
-     * @param newPlainPassword New password from text field
-     * @throws IllegalArgumentException if password is weak
+     * Logs out the user (basic implementation)
+     */
+    public void logout() {
+        System.out.println(name + " logged out.");
+    }
+
+    /**
+     * Changes the user's password
+     * @param newPlainPassword New plain text password
      */
     public void changePassword(String newPlainPassword) {
-        if (!validatePasswordStrength(newPlainPassword)) {
-            throw new IllegalArgumentException(
-                    "Password must be at least 8 characters with mix of uppercase, lowercase, numbers, and symbols"
-            );
-        }
         this.passwordHash = hashPassword(newPlainPassword);
     }
 
-    /**
-     * Deactivates the user account.
-     * Called from Admin panel in Swing.
-     */
-    public void deactivateAccount() {
-        this.isActive = false;
-    }
+    // ================= SHA-256 PASSWORD HASHING =================
 
     /**
-     * Reactivates the user account.
-     * Called from Admin panel in Swing.
-     */
-    public void reactivateAccount() {
-        this.isActive = true;
-    }
-
-    // ================= SECURE PASSWORD HASHING =================
-
-    /**
-     * Hashes a password with SHA-256 and random salt.
-     * Uses cryptographically secure random bytes.
-     *
+     * Hashes a password with SHA-256 and random salt
      * @param plainPassword Plain text password to hash
      * @return String in format "salt:hash" (both Base64 encoded)
      */
@@ -142,22 +93,20 @@ public abstract class User {
             digest.update(salt);  // Add salt first
             byte[] hashedBytes = digest.digest(plainPassword.getBytes());
 
-            // Convert to Base64 strings for safe storage
+            // Convert to Base64 strings and combine as "salt:hash"
             String saltBase64 = Base64.getEncoder().encodeToString(salt);
             String hashBase64 = Base64.getEncoder().encodeToString(hashedBytes);
 
-            return saltBase64 + ":" + hashBase64;  // Format for easy parsing
+            return saltBase64 + ":" + hashBase64;
 
         } catch (NoSuchAlgorithmException e) {
-            // SHA-256 is standard in Java, but handle gracefully
-            throw new RuntimeException("Security algorithm unavailable", e);
+            // SHA-256 should always be available, but handle just in case
+            throw new RuntimeException("SHA-256 algorithm not available", e);
         }
     }
 
     /**
-     * Verifies a password attempt against the stored hash.
-     * Uses constant-time comparison to prevent timing attacks.
-     *
+     * Verifies a password attempt against the stored hash
      * @param passwordAttempt Plain text password attempt
      * @param storedHash Stored hash in "salt:hash" format
      * @return true if password matches, false otherwise
@@ -167,7 +116,7 @@ public abstract class User {
             // Split the stored hash into salt and hash parts
             String[] parts = storedHash.split(":");
             if (parts.length != 2) {
-                return false;  // Invalid format - corrupted data
+                return false;  // Invalid format
             }
 
             // Decode Base64 strings back to bytes
@@ -182,114 +131,28 @@ public abstract class User {
             // Compare hashes using constant-time comparison
             return MessageDigest.isEqual(storedHashBytes, attemptHashBytes);
 
-        } catch (IllegalArgumentException e) {
-            // Invalid Base64 encoding
-            return false;
         } catch (Exception e) {
-            // Any other error
+            // If anything goes wrong (wrong format, decoding error, etc.)
             return false;
         }
     }
 
-    // ================= UI HELPER METHODS =================
+    // ================= USER PROFILE METHOD =================
 
     /**
-     * Gets user data as array for Swing JTable.
-     * Used in Admin panel to display user list.
-     *
-     * @return String array for table row
+     * Returns user profile as a Map (useful for JSON serialization or UI display)
+     * @return Map containing all user attributes except password
      */
-    public String[] toTableRow() {
-        return new String[] {
-                id,
-                name,
-                email,
-                mobile,
-                username,
-                role.toString(),
-                isActive ? "Active" : "Inactive",
-                "••••••••"  // Masked password for security
-        };
-    }
-
-    /**
-     * Gets user profile for display in UI.
-     *
-     * @return Formatted profile string
-     */
-    public String getProfileDisplay() {
-        return String.format("""
-            User Profile
-            ============
-            ID: %s
-            Name: %s
-            Email: %s
-            Phone: %s
-            Username: %s
-            Role: %s
-            Status: %s
-            """,
-                id, name, email, mobile, username, role,
-                isActive ? "Active" : "Inactive"
-        );
-    }
-
-    /**
-     * Checks if this user can perform an action based on role.
-     * Useful for UI button enabling/disabling.
-     *
-     * @param requiredRole Minimum role required
-     * @return true if user has sufficient privileges
-     */
-    public boolean hasPermission(UserRole requiredRole) {
-        // Role hierarchy: ADMIN > LIBRARIAN > MEMBER
-        return this.role.ordinal() <= requiredRole.ordinal();
-    }
-
-    // ================= PASSWORD VALIDATION =================
-
-    /**
-     * Validates password strength for UI feedback.
-     * Called from password change dialog.
-     *
-     * @param password Password to validate
-     * @return Validation result with message
-     */
-    public static PasswordValidationResult validatePassword(String password) {
-        if (password == null || password.length() < 8) {
-            return new PasswordValidationResult(false,
-                    "Password must be at least 8 characters long");
-        }
-
-        boolean hasUpper = false;
-        boolean hasLower = false;
-        boolean hasDigit = false;
-        boolean hasSpecial = false;
-
-        for (char c : password.toCharArray()) {
-            if (Character.isUpperCase(c)) hasUpper = true;
-            if (Character.isLowerCase(c)) hasLower = true;
-            if (Character.isDigit(c)) hasDigit = true;
-            if (!Character.isLetterOrDigit(c) && !Character.isWhitespace(c)) hasSpecial = true;
-        }
-
-        // Build feedback message
-        StringBuilder feedback = new StringBuilder();
-        int criteriaMet = 0;
-
-        if (hasUpper) criteriaMet++; else feedback.append("✗ Needs uppercase letter\n");
-        if (hasLower) criteriaMet++; else feedback.append("✗ Needs lowercase letter\n");
-        if (hasDigit) criteriaMet++; else feedback.append("✗ Needs number\n");
-        if (hasSpecial) criteriaMet++; else feedback.append("✗ Needs special character\n");
-
-        boolean isValid = criteriaMet >= 3;
-        if (isValid) {
-            feedback.insert(0, "✓ Password strength: Good\n");
-        } else {
-            feedback.insert(0, "Password needs at least 3 of 4 criteria:\n");
-        }
-
-        return new PasswordValidationResult(isValid, feedback.toString());
+    public Map<String, Object> getProfile() {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("id", id);
+        profile.put("name", name);
+        profile.put("email", email);
+        profile.put("mobile", mobile);
+        profile.put("username", username);
+        profile.put("role", role);
+        profile.put("isActive", isActive);
+        return profile;
     }
 
     // ================= GETTERS AND SETTERS =================
@@ -310,22 +173,16 @@ public abstract class User {
     public void setUsername(String username) { this.username = username; }
 
     /**
-     * Gets the password hash (for file persistence only).
-     * DO NOT use for authentication - use authenticate() instead.
-     *
+     * Gets the password hash (for debugging or migration purposes only)
      * @return The hashed password in "salt:hash" format
      */
     public String getPasswordHash() { return passwordHash; }
 
     /**
-     * Sets password hash (for loading from file only).
-     * DO NOT use for new passwords - they should be hashed via constructor.
-     *
+     * Sets password hash directly (use only for loading from storage)
      * @param passwordHash Already hashed password in "salt:hash" format
      */
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
@@ -335,27 +192,46 @@ public abstract class User {
 
     // ================= STRING REPRESENTATION =================
 
+    /**
+     * Returns a readable string representation of the user
+     * @return String in format "Name (ROLE)"
+     */
     @Override
     public String toString() {
-        return String.format("%s [%s] - %s", name, role, isActive ? "Active" : "Inactive");
+        return name + " (" + role + ")";
     }
 
-    // ================= INNER CLASSES =================
+    // ================= OPTIONAL: PASSWORD VALIDATION =================
 
     /**
-     * Helper class for password validation results.
-     * Used for Swing UI feedback.
+     * Validates password strength (optional helper method)
+     * @param password Password to validate
+     * @return true if password meets minimum strength requirements
      */
-    public static class PasswordValidationResult {
-        private final boolean valid;
-        private final String message;
-
-        public PasswordValidationResult(boolean valid, String message) {
-            this.valid = valid;
-            this.message = message;
+    public static boolean validatePasswordStrength(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
         }
 
-        public boolean isValid() { return valid; }
-        public String getMessage() { return message; }
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUpper = true;
+            if (Character.isLowerCase(c)) hasLower = true;
+            if (Character.isDigit(c)) hasDigit = true;
+            if (!Character.isLetterOrDigit(c) && !Character.isWhitespace(c)) hasSpecial = true;
+        }
+
+        // Require at least 3 of the 4 criteria
+        int criteriaMet = 0;
+        if (hasUpper) criteriaMet++;
+        if (hasLower) criteriaMet++;
+        if (hasDigit) criteriaMet++;
+        if (hasSpecial) criteriaMet++;
+
+        return criteriaMet >= 3;
     }
 }
