@@ -1,8 +1,5 @@
 package model;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * EBook class - represents digital books
  * Implements MediaSearchable for UML compliance
@@ -52,24 +49,13 @@ public class EBook extends Book implements MediaSearchable {
         return true;
     }
 
-    /**
-     * Gets file size in human-readable format
-     */
-    public String getFormattedFileSize() {
-        if (fileSize < 1024) {
-            return String.format("%.1f MB", fileSize);
-        } else {
-            return String.format("%.1f GB", fileSize / 1024);
-        }
-    }
-
     // ====================
     // MediaSearchable Interface (UML Compliance)
     // ====================
     @Override
     public String getFileInfo() {
-        return String.format("%s format, %s%s",
-                format, getFormattedFileSize(),
+        return String.format("%s format, %.2f MB%s",
+                format, fileSize,
                 isDRMProtected ? " (DRM Protected)" : "");
     }
 
@@ -100,14 +86,6 @@ public class EBook extends Book implements MediaSearchable {
             case "mobi":
                 // MOBI is Kindle format
                 return deviceLower.contains("kindle");
-
-            case "azw":
-                // AZW is Amazon Kindle format
-                return deviceLower.contains("kindle");
-
-            case "txt":
-                // Plain text works everywhere
-                return true;
 
             default:
                 return deviceLower.contains("computer"); // Unknown format, assume PC works
@@ -144,57 +122,6 @@ public class EBook extends Book implements MediaSearchable {
     }
 
     // ====================
-    // SQLITE-COMPATIBLE getProfile()
-    // ====================
-
-    /**
-     * Returns eBook data as Map for SQLite database storage
-     * Overrides parent method to add eBook-specific fields
-     * Column names match database schema
-     */
-    @Override
-    public Map<String, Object> getProfile() {
-        Map<String, Object> profile = super.getProfile(); // Get base Book fields
-
-        // Add eBook-specific fields for SQLite
-        profile.put("file_size_mb", fileSize);
-        profile.put("format", format);
-        profile.put("download_link", downloadLink);
-        profile.put("drm_protected", isDRMProtected ? 1 : 0); // Boolean to int for SQLite
-        profile.put("download_url", getDownloadUrl());
-
-        // Set PrintedBook-specific fields to null (since this is an eBook)
-        profile.put("shelf_location", null);
-        profile.put("condition", null);
-        profile.put("edition", null);
-        profile.put("is_reserved", null);
-
-        return profile;
-    }
-
-    /**
-     * Static factory method to create EBook from database Map
-     * Used by BookRepositorySQLite when loading from database
-     */
-    public static EBook fromMap(Map<String, Object> data) {
-        // Extract base Book fields
-        String isbn = (String) data.get("isbn");
-        String title = (String) data.get("title");
-        String author = (String) data.get("author");
-        int publicationYear = (int) data.get("publication_year");
-        int copies = (int) data.get("copies");
-
-        // Extract eBook-specific fields
-        double fileSize = (double) data.get("file_size_mb");
-        String format = (String) data.get("format");
-        String downloadLink = (String) data.get("download_link");
-        boolean drmProtected = (int) data.get("drm_protected") == 1;
-
-        return new EBook(isbn, title, author, publicationYear, copies,
-                fileSize, format, downloadLink, drmProtected);
-    }
-
-    // ====================
     // GETTERS AND SETTERS WITH VALIDATION
     // ====================
     public void setFileSize(double fileSize) {
@@ -208,12 +135,7 @@ public class EBook extends Book implements MediaSearchable {
         if (format == null || format.trim().isEmpty()) {
             throw new IllegalArgumentException("Format cannot be null or empty");
         }
-        // Validate format
-        String formatLower = format.toLowerCase();
-        if (!formatLower.matches("pdf|epub|mobi|azw|txt")) {
-            throw new IllegalArgumentException("Invalid format: " + format +
-                    ". Valid formats: PDF, EPUB, MOBI, AZW, TXT");
-        }
+        String validFormats = "PDF, EPUB, MOBI, AZW, TXT";
         this.format = format.trim();
     }
 
@@ -232,11 +154,6 @@ public class EBook extends Book implements MediaSearchable {
         this.downloadUrl = downloadUrl;
     }
 
-    // Additional getters for convenience
-    public String getFormattedSize() {
-        return getFormattedFileSize();
-    }
-
     // ====================
     // OVERRIDDEN METHODS
     // ====================
@@ -245,40 +162,13 @@ public class EBook extends Book implements MediaSearchable {
         return super.toString() + " [" + getFileInfo() + "]";
     }
 
-    /**
-     * Enhanced toString for detailed display
-     */
-    public String toDetailedString() {
-        return String.format("EBook: %s\n" +
-                        "Author: %s\n" +
-                        "Format: %s, Size: %s\n" +
-                        "DRM: %s\n" +
-                        "Download: %s",
-                getTitle(), getAuthor(), format, getFormattedFileSize(),
-                isDRMProtected ? "Protected" : "Free",
-                downloadLink != null ? "Available" : "Not Available");
-    }
-
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof EBook)) return false;
-        if (!super.equals(obj)) return false;
-
-        EBook eBook = (EBook) obj;
-        return Double.compare(eBook.fileSize, fileSize) == 0 &&
-                isDRMProtected == eBook.isDRMProtected &&
-                format.equals(eBook.format) &&
-                downloadLink.equals(eBook.downloadLink);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + Double.hashCode(fileSize);
-        result = 31 * result + format.hashCode();
-        result = 31 * result + downloadLink.hashCode();
-        result = 31 * result + (isDRMProtected ? 1 : 0);
-        return result;
+    public java.util.Map<String, Object> getProfile() {
+        java.util.Map<String, Object> profile = super.getProfile();
+        profile.put("fileSizeMB", fileSize);
+        profile.put("format", format);
+        profile.put("drmProtected", isDRMProtected);
+        profile.put("downloadAvailable", downloadLink != null);
+        return profile;
     }
 }
