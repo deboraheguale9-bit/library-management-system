@@ -1,150 +1,208 @@
 package swingui;
 
 import model.User;
-import model.UserRole;
-import repository.FileUserRepository;
+import model.Role;
 import service.UserService;
-import util.Validator;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdminDashboard extends JFrame {
-    private User currentUser;
-    private UserService userService;
     private JTable userTable;
-    private DefaultTableModel tableModel;
+    private JTextField searchField;
+    private JComboBox<String> roleFilter;
+    private JComboBox<String> statusFilter;
+    private UserTableModel tableModel; // Changed from DefaultTableModel to UserTableModel
+    private UserService userService;
+    private TableRowSorter<UserTableModel> sorter;
 
-    public AdminDashboard(User loggedInUser) {
-        this.currentUser = loggedInUser;
-
-        // Initialize UserService
-        String userFilePath = "users.txt";
-        FileUserRepository userRepository = new FileUserRepository(userFilePath);
-        userService = new UserService(userRepository);
-
-        setupUI();
-        loadUsers();
-    }
-
-    private void setupUI() {
-        setTitle("Admin Dashboard - Library Management System");
-        setSize(1000, 700);
+    public AdminDashboard() {
+        this.userService = new UserService();
+        setTitle("Library System - Admin Dashboard");
+        setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        initComponents();
+        loadUsers();
+    }
+
+    private void initComponents() {
         // Main panel with BorderLayout
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Header panel
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        // TOP: Title
         JLabel titleLabel = new JLabel("User Management", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Welcome label
-        JLabel welcomeLabel = new JLabel("Welcome, " + currentUser.getName() + " (Admin)");
-        welcomeLabel.setFont(new Font("Arial", Font.ITALIC, 14));
-        headerPanel.add(welcomeLabel, BorderLayout.EAST);
-
-        // Logout button
-        JButton logoutBtn = new JButton("Logout");
-        logoutBtn.addActionListener(e -> logout());
-        headerPanel.add(logoutBtn, BorderLayout.WEST);
-
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
-
-        // Table panel
-        JPanel tablePanel = new JPanel(new BorderLayout());
-
-        // Create table model
-        String[] columns = {"ID", "Name", "Email", "Phone", "Username", "Role", "Active"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Make table non-editable
-            }
-        };
-
+        // CENTER: Table with scroll pane
+        tableModel = new UserTableModel(new ArrayList<>()); // Now using UserTableModel
         userTable = new JTable(tableModel);
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         userTable.setRowHeight(25);
-        userTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+
+        // Make table sortable
+        sorter = new TableRowSorter<>(tableModel);
+        userTable.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(userTable);
-        scrollPane.setPreferredSize(new Dimension(900, 400));
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Users List"));
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        mainPanel.add(tablePanel, BorderLayout.CENTER);
+        // WEST: Buttons panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+        buttonPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
 
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        JButton addButton = new JButton("Add User");
+        JButton editButton = new JButton("Edit User");
+        JButton deleteButton = new JButton("Delete User");
+        JButton refreshButton = new JButton("Refresh");
+        JButton logoutButton = new JButton("Logout");
 
-        JButton addBtn = new JButton("Add User");
-        addBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        addBtn.setBackground(new Color(60, 179, 113));
-        addBtn.setForeground(Color.WHITE);
-        addBtn.setPreferredSize(new Dimension(120, 40));
-        addBtn.addActionListener(e -> addUser());
+        // Style buttons
+        Dimension buttonSize = new Dimension(150, 35);
+        addButton.setPreferredSize(buttonSize);
+        editButton.setPreferredSize(buttonSize);
+        deleteButton.setPreferredSize(buttonSize);
+        refreshButton.setPreferredSize(buttonSize);
+        logoutButton.setPreferredSize(buttonSize);
 
-        JButton editBtn = new JButton("Edit User");
-        editBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        editBtn.setBackground(new Color(30, 144, 255));
-        editBtn.setForeground(Color.WHITE);
-        editBtn.setPreferredSize(new Dimension(120, 40));
-        editBtn.addActionListener(e -> editUser());
+        addButton.setMaximumSize(buttonSize);
+        editButton.setMaximumSize(buttonSize);
+        deleteButton.setMaximumSize(buttonSize);
+        refreshButton.setMaximumSize(buttonSize);
+        logoutButton.setMaximumSize(buttonSize);
 
-        JButton deleteBtn = new JButton("Delete User");
-        deleteBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        deleteBtn.setBackground(new Color(220, 20, 60));
-        deleteBtn.setForeground(Color.WHITE);
-        deleteBtn.setPreferredSize(new Dimension(120, 40));
-        deleteBtn.addActionListener(e -> deleteUser());
+        addButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        editButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        deleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        refreshButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logoutButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton refreshBtn = new JButton("Refresh");
-        refreshBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        refreshBtn.setPreferredSize(new Dimension(120, 40));
-        refreshBtn.addActionListener(e -> loadUsers());
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(addButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(editButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(Box.createVerticalStrut(20));
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(Box.createVerticalStrut(20));
+        buttonPanel.add(logoutButton);
+        buttonPanel.add(Box.createVerticalGlue());
 
-        JButton searchBtn = new JButton("Search");
-        searchBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        searchBtn.setPreferredSize(new Dimension(120, 40));
-        searchBtn.addActionListener(e -> searchUsers());
+        mainPanel.add(buttonPanel, BorderLayout.WEST);
 
-        buttonPanel.add(addBtn);
-        buttonPanel.add(editBtn);
-        buttonPanel.add(deleteBtn);
-        buttonPanel.add(refreshBtn);
-        buttonPanel.add(searchBtn);
+        // SOUTH: Search and filter panel
+        JPanel southPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        southPanel.setBorder(BorderFactory.createTitledBorder("Search & Filter"));
 
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        // Search field
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        southPanel.add(new JLabel("Search:"), gbc);
 
-        add(mainPanel);
-        setVisible(true);
+        searchField = new JTextField(20);
+        gbc.gridx = 1;
+        southPanel.add(searchField, gbc);
+
+        // Role filter
+        gbc.gridx = 2;
+        southPanel.add(new JLabel("Role:"), gbc);
+
+        roleFilter = new JComboBox<>(new String[]{"All", "ADMIN", "LIBRARIAN", "MEMBER"});
+        gbc.gridx = 3;
+        southPanel.add(roleFilter, gbc);
+
+        // Status filter
+        gbc.gridx = 4;
+        southPanel.add(new JLabel("Status:"), gbc);
+
+        statusFilter = new JComboBox<>(new String[]{"All", "Active", "Inactive"});
+        gbc.gridx = 5;
+        southPanel.add(statusFilter, gbc);
+
+        // Search button
+        JButton searchButton = new JButton("Search");
+        gbc.gridx = 6;
+        gbc.fill = GridBagConstraints.NONE;
+        southPanel.add(searchButton, gbc);
+
+        // Clear button
+        JButton clearButton = new JButton("Clear");
+        gbc.gridx = 7;
+        southPanel.add(clearButton, gbc);
+
+        mainPanel.add(southPanel, BorderLayout.SOUTH);
+
+        // Add action listeners
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addUser();
+            }
+        });
+
+        editButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editUser();
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteUser();
+            }
+        });
+
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadUsers();
+            }
+        });
+
+        logoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logout();
+            }
+        });
+
+        searchButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterUsers();
+            }
+        });
+
+        clearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearFilters();
+            }
+        });
+
+        setContentPane(mainPanel);
     }
 
     private void loadUsers() {
-        // Clear table
-        tableModel.setRowCount(0);
-
         // Get all users from service
         List<User> users = userService.getAllUsers();
 
-        // Add users to table
-        for (User user : users) {
-            tableModel.addRow(new Object[]{
-                    user.getId(),
-                    user.getName(),
-                    user.getEmail(),
-                    user.getMobile(),
-                    user.getUsername(),
-                    user.getRole().toString(),
-                    user.isActive() ? "Yes" : "No"
-            });
-        }
+        // Update table model with users
+        tableModel.setUsers(users); // Using UserTableModel's setUsers method
 
         JOptionPane.showMessageDialog(this,
                 "Loaded " + users.size() + " users",
@@ -153,352 +211,155 @@ public class AdminDashboard extends JFrame {
     }
 
     private void addUser() {
-        // Create add user dialog
-        JDialog addDialog = new JDialog(this, "Add New User", true);
-        addDialog.setSize(400, 500);
-        addDialog.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        JTextField nameField = new JTextField(20);
-        JTextField emailField = new JTextField(20);
-        JTextField phoneField = new JTextField(20);
-        JTextField usernameField = new JTextField(20);
-        JPasswordField passwordField = new JPasswordField(20);
-        JComboBox<UserRole> roleCombo = new JComboBox<>(UserRole.values());
-        JCheckBox activeCheckBox = new JCheckBox("Active", true);
-
-        int row = 0;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        addDialog.add(new JLabel("Full Name:"), gbc);
-        gbc.gridx = 1;
-        addDialog.add(nameField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        addDialog.add(new JLabel("Email:"), gbc);
-        gbc.gridx = 1;
-        addDialog.add(emailField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        addDialog.add(new JLabel("Phone:"), gbc);
-        gbc.gridx = 1;
-        addDialog.add(phoneField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        addDialog.add(new JLabel("Username:"), gbc);
-        gbc.gridx = 1;
-        addDialog.add(usernameField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        addDialog.add(new JLabel("Password:"), gbc);
-        gbc.gridx = 1;
-        addDialog.add(passwordField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        addDialog.add(new JLabel("Role:"), gbc);
-        gbc.gridx = 1;
-        addDialog.add(roleCombo, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        gbc.gridwidth = 2;
-        addDialog.add(activeCheckBox, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        gbc.gridwidth = 2;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton saveBtn = new JButton("Save");
-        JButton cancelBtn = new JButton("Cancel");
-        buttonPanel.add(saveBtn);
-        buttonPanel.add(cancelBtn);
-        addDialog.add(buttonPanel, gbc);
-
-        // Save button action
-        saveBtn.addActionListener(e -> {
-            String name = nameField.getText().trim();
-            String email = emailField.getText().trim();
-            String phone = phoneField.getText().trim();
-            String username = usernameField.getText().trim();
-            String password = new String(passwordField.getPassword());
-            UserRole role = (UserRole) roleCombo.getSelectedItem();
-            boolean active = activeCheckBox.isSelected();
-
-            // Validation
-            if (!Validator.isValidName(name)) {
-                JOptionPane.showMessageDialog(addDialog, "Invalid name format!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (!Validator.isValidEmail(email)) {
-                JOptionPane.showMessageDialog(addDialog, "Invalid email format!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (!Validator.isValidPhone(phone)) {
-                JOptionPane.showMessageDialog(addDialog, "Invalid phone number!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (username.isEmpty()) {
-                JOptionPane.showMessageDialog(addDialog, "Username cannot be empty!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (!Validator.isStrongPassword(password)) {
-                JOptionPane.showMessageDialog(addDialog,
-                        "Password must be at least 8 characters with uppercase, lowercase, number, and special character!",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Check if username already exists
-            if (!userService.isUsernameAvailable(username)) {
-                JOptionPane.showMessageDialog(addDialog, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Check if email already exists
-            if (!userService.isEmailAvailable(email)) {
-                JOptionPane.showMessageDialog(addDialog, "Email already registered!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Create user (using anonymous class since User is abstract)
-            String id = "U" + System.currentTimeMillis();
-            User newUser = new User(id, name, email, phone, username, password, role) {
-                // Anonymous implementation
-            };
-            newUser.setActive(active);
-
-            // Save user
-            if (userService.registerUser(newUser)) {
-                JOptionPane.showMessageDialog(addDialog, "User added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                addDialog.dispose();
-                loadUsers();
+        UserDialog dialog = new UserDialog(this, null);
+        dialog.setVisible(true);
+        if (dialog.isSaved()) {
+            User newUser = dialog.getUser();
+            boolean success = userService.addUser(newUser);
+            if (success) {
+                tableModel.addUser(newUser);
+                JOptionPane.showMessageDialog(this,
+                        "User added successfully!",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(addDialog, "Failed to add user!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Failed to add user. Username may already exist.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
-        });
-
-        // Cancel button action
-        cancelBtn.addActionListener(e -> addDialog.dispose());
-
-        addDialog.setLocationRelativeTo(this);
-        addDialog.setVisible(true);
+        }
     }
 
     private void editUser() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a user to edit!", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Please select a user to edit",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
-        User user = userService.getUserById(userId);
+        // Convert view index to model index (in case of sorting)
+        int modelRow = userTable.convertRowIndexToModel(selectedRow);
+        User selectedUser = tableModel.getUserAt(modelRow);
 
-        if (user == null) {
-            JOptionPane.showMessageDialog(this, "User not found!", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Create edit dialog
-        JDialog editDialog = new JDialog(this, "Edit User", true);
-        editDialog.setSize(400, 500);
-        editDialog.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        JTextField nameField = new JTextField(user.getName(), 20);
-        JTextField emailField = new JTextField(user.getEmail(), 20);
-        JTextField phoneField = new JTextField(user.getMobile(), 20);
-        JTextField usernameField = new JTextField(user.getUsername(), 20);
-        JComboBox<UserRole> roleCombo = new JComboBox<>(UserRole.values());
-        roleCombo.setSelectedItem(user.getRole());
-        JCheckBox activeCheckBox = new JCheckBox("Active", user.isActive());
-
-        int row = 0;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        editDialog.add(new JLabel("Full Name:"), gbc);
-        gbc.gridx = 1;
-        editDialog.add(nameField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        editDialog.add(new JLabel("Email:"), gbc);
-        gbc.gridx = 1;
-        editDialog.add(emailField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        editDialog.add(new JLabel("Phone:"), gbc);
-        gbc.gridx = 1;
-        editDialog.add(phoneField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        editDialog.add(new JLabel("Username:"), gbc);
-        gbc.gridx = 1;
-        editDialog.add(usernameField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        editDialog.add(new JLabel("Role:"), gbc);
-        gbc.gridx = 1;
-        editDialog.add(roleCombo, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        gbc.gridwidth = 2;
-        editDialog.add(activeCheckBox, gbc);
-
-        // Password change section
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        gbc.gridwidth = 2;
-        editDialog.add(new JLabel("Change Password (leave empty to keep current):"), gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        editDialog.add(new JLabel("New Password:"), gbc);
-        gbc.gridx = 1;
-        JPasswordField passwordField = new JPasswordField(20);
-        editDialog.add(passwordField, gbc);
-
-        row++; gbc.gridx = 0; gbc.gridy = row;
-        gbc.gridwidth = 2;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton saveBtn = new JButton("Save Changes");
-        JButton cancelBtn = new JButton("Cancel");
-        buttonPanel.add(saveBtn);
-        buttonPanel.add(cancelBtn);
-        editDialog.add(buttonPanel, gbc);
-
-        // Save button action
-        saveBtn.addActionListener(e -> {
-            String name = nameField.getText().trim();
-            String email = emailField.getText().trim();
-            String phone = phoneField.getText().trim();
-            String username = usernameField.getText().trim();
-            UserRole role = (UserRole) roleCombo.getSelectedItem();
-            boolean active = activeCheckBox.isSelected();
-            String newPassword = new String(passwordField.getPassword());
-
-            // Validation
-            if (!Validator.isValidName(name)) {
-                JOptionPane.showMessageDialog(editDialog, "Invalid name format!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (!Validator.isValidEmail(email)) {
-                JOptionPane.showMessageDialog(editDialog, "Invalid email format!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (!Validator.isValidPhone(phone)) {
-                JOptionPane.showMessageDialog(editDialog, "Invalid phone number!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Check if username changed and is available
-            if (!username.equals(user.getUsername()) && !userService.isUsernameAvailable(username)) {
-                JOptionPane.showMessageDialog(editDialog, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Check if email changed and is available
-            if (!email.equals(user.getEmail()) && !userService.isEmailAvailable(email)) {
-                JOptionPane.showMessageDialog(editDialog, "Email already registered!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Update user properties
-            user.setName(name);
-            user.setEmail(email);
-            user.setMobile(phone);
-            user.setUsername(username);
-            user.setRole(role);
-            user.setActive(active);
-
-            // Change password if provided
-            if (!newPassword.isEmpty()) {
-                if (!Validator.isStrongPassword(newPassword)) {
-                    JOptionPane.showMessageDialog(editDialog,
-                            "Password must be at least 8 characters with uppercase, lowercase, number, and special character!",
-                            "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+        if (selectedUser != null) {
+            UserDialog dialog = new UserDialog(this, selectedUser);
+            dialog.setVisible(true);
+            if (dialog.isSaved()) {
+                User updatedUser = dialog.getUser();
+                boolean success = userService.updateUser(updatedUser);
+                if (success) {
+                    tableModel.updateUser(modelRow, updatedUser);
+                    JOptionPane.showMessageDialog(this,
+                            "User updated successfully!",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Failed to update user",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
-                user.changePassword(newPassword);
             }
-
-            // Save changes
-            if (userService.updateUser(user)) {
-                JOptionPane.showMessageDialog(editDialog, "User updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                editDialog.dispose();
-                loadUsers();
-            } else {
-                JOptionPane.showMessageDialog(editDialog, "Failed to update user!", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        // Cancel button action
-        cancelBtn.addActionListener(e -> editDialog.dispose());
-
-        editDialog.setLocationRelativeTo(this);
-        editDialog.setVisible(true);
+        }
     }
 
     private void deleteUser() {
         int selectedRow = userTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a user to delete!", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Please select a user to delete",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String userId = (String) tableModel.getValueAt(selectedRow, 0);
-        String userName = (String) tableModel.getValueAt(selectedRow, 1);
-
-        // Confirm deletion
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete user: " + userName + "?\nThis action cannot be undone.",
+                "Are you sure you want to delete this user?",
                 "Confirm Delete",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
+                JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (userService.deleteUser(userId)) {
-                JOptionPane.showMessageDialog(this, "User deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                loadUsers();
-            } else {
-                JOptionPane.showMessageDialog(this, "Failed to delete user!", "Error", JOptionPane.ERROR_MESSAGE);
+            int modelRow = userTable.convertRowIndexToModel(selectedRow);
+            User selectedUser = tableModel.getUserAt(modelRow);
+
+            if (selectedUser != null) {
+                boolean success = userService.deleteUser(selectedUser.getId());
+                if (success) {
+                    tableModel.removeUser(modelRow);
+                    JOptionPane.showMessageDialog(this,
+                            "User deleted successfully!",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Failed to delete user",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
 
-    private void searchUsers() {
-        String searchTerm = JOptionPane.showInputDialog(this, "Enter name to search:", "Search Users", JOptionPane.QUESTION_MESSAGE);
+    private void filterUsers() {
+        String searchText = searchField.getText().toLowerCase();
+        String selectedRole = (String) roleFilter.getSelectedItem();
+        String selectedStatus = (String) statusFilter.getSelectedItem();
 
-        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            // Clear table
-            tableModel.setRowCount(0);
+        RowFilter<UserTableModel, Object> rf = RowFilter.regexFilter(".*", 0); // Show all initially
 
-            // Search users
-            List<User> searchResults = userService.searchUsersByName(searchTerm.trim());
+        if (!searchText.isEmpty() || !"All".equals(selectedRole) || !"All".equals(selectedStatus)) {
+            rf = new RowFilter<UserTableModel, Object>() {
+                @Override
+                public boolean include(Entry<? extends UserTableModel, ? extends Object> entry) {
+                    // Get row data
+                    UserTableModel model = entry.getModel();
+                    int row = entry.getIdentifier().intValue();
 
-            // Add results to table
-            for (User user : searchResults) {
-                tableModel.addRow(new Object[]{
-                        user.getId(),
-                        user.getName(),
-                        user.getEmail(),
-                        user.getMobile(),
-                        user.getUsername(),
-                        user.getRole().toString(),
-                        user.isActive() ? "Yes" : "No"
-                });
-            }
+                    // Check search text
+                    boolean matchesSearch = true;
+                    if (!searchText.isEmpty()) {
+                        matchesSearch = false;
+                        for (int i = 0; i < model.getColumnCount(); i++) {
+                            Object value = model.getValueAt(row, i);
+                            if (value != null && value.toString().toLowerCase().contains(searchText)) {
+                                matchesSearch = true;
+                                break;
+                            }
+                        }
+                    }
 
-            JOptionPane.showMessageDialog(this,
-                    "Found " + searchResults.size() + " user(s)",
-                    "Search Results",
-                    JOptionPane.INFORMATION_MESSAGE);
+                    // Check role filter
+                    boolean matchesRole = true;
+                    if (!"All".equals(selectedRole)) {
+                        String userRole = model.getValueAt(row, 5).toString(); // Role is column 5
+                        matchesRole = userRole.equals(selectedRole);
+                    }
+
+                    // Check status filter
+                    boolean matchesStatus = true;
+                    if (!"All".equals(selectedStatus)) {
+                        String userStatus = model.getValueAt(row, 6).toString(); // Status is column 6
+                        String expectedStatus = "Active".equals(selectedStatus) ? "Yes" : "No";
+                        matchesStatus = userStatus.equals(expectedStatus);
+                    }
+
+                    return matchesSearch && matchesRole && matchesStatus;
+                }
+            };
         }
+
+        sorter.setRowFilter(rf);
+    }
+
+    private void clearFilters() {
+        searchField.setText("");
+        roleFilter.setSelectedIndex(0);
+        statusFilter.setSelectedIndex(0);
+        sorter.setRowFilter(null);
     }
 
     private void logout() {
@@ -508,20 +369,17 @@ public class AdminDashboard extends JFrame {
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            currentUser.logout();
-            this.dispose();
-            new LoginWindow().setVisible(true);
+            // In a real app, you might want to save state or show login screen
+            JOptionPane.showMessageDialog(this, "Logged out successfully!");
+            // For now, just exit
+            System.exit(0);
         }
     }
 
-    // Main method for testing
     public static void main(String[] args) {
-        // For testing only - create a mock admin user
-        User mockAdmin = new User("admin001", "Test Admin", "admin@test.com",
-                "123-4567", "admin", "admin123", UserRole.ADMIN) {
-            // Anonymous class
-        };
-
-        SwingUtilities.invokeLater(() -> new AdminDashboard(mockAdmin));
+        SwingUtilities.invokeLater(() -> {
+            AdminDashboard adminDashboard = new AdminDashboard();
+            adminDashboard.setVisible(true);
+        });
     }
 }
