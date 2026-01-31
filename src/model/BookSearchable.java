@@ -2,7 +2,7 @@ package model;
 
 import java.util.List;
 
-public interface Searchable {
+public interface BookSearchable {
     List<Book> searchByTitle(String title);
     List<Book> searchByAuthor(String author);
     Book searchByISBN(String isbn);

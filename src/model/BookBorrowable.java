@@ -1,6 +1,6 @@
 package model;
 
-public interface Borrowable {
+public interface BookBorrowable {
     boolean borrow(Member member);
     boolean returnItem();
     boolean getAvailability();

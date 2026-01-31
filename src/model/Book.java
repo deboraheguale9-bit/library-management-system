@@ -4,7 +4,7 @@ import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Book implements Searchable, Borrowable {
+public abstract class Book implements BookSearchable, BookBorrowable {
     private String isbn;
     private String title;
     private String author;
@@ -87,7 +87,7 @@ public abstract class Book implements Searchable, Borrowable {
         return null;
     }
 
-    // Default method from Searchable interface
+    // Default method from BookSearchable interface
     @Override
     public List<Book> search(String query) {
         List<Book> results = searchByTitle(query);
