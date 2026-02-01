@@ -1,12 +1,20 @@
 import swingui.LoginWindow;
 import util.DatabaseManager;
+import repository.FileUserRepository;
+import model.User;
+import model.UserRole;
 
 import javax.swing.*;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        DatabaseManager.initializeDatabase();
         System.out.println("=== LIBRARY MANAGEMENT SYSTEM ===\n");
+
+        // DEMONSTRATE FILE I/O (Required for project)
+        demonstrateFileStorage();
+
+        DatabaseManager.initializeDatabase();
 
         // Add these VM options to handle SQLite native access warnings
         System.setProperty("org.sqlite.lib.path", ".");
@@ -47,5 +55,45 @@ public class Main {
                 System.exit(1);
             }
         });
+    }
+
+    private static void demonstrateFileStorage() {
+        System.out.println("=== FILE I/O DEMONSTRATION ===");
+        System.out.println("(Required for project: Demonstrating file-based storage)");
+
+        try {
+            // Create file-based repository
+            FileUserRepository fileRepo = new FileUserRepository("users.csv");
+
+            // Show users from file storage
+            List<User> fileUsers = fileRepo.findAll();
+            System.out.println("✅ Users in file storage: " + fileUsers.size());
+
+            // List each user
+            for (User user : fileUsers) {
+                System.out.println("  - " + user.getUsername() + " (" + user.getRole() + ")");
+            }
+
+            // Test: Try to find a user by username
+            User foundUser = fileRepo.findByUsername("admin");
+            if (foundUser != null) {
+                System.out.println("✅ Verified: Found user 'admin' in file storage");
+            }
+
+            // Test: Add a new user to file (if not exists)
+            User testUser = fileRepo.findByUsername("testuser");
+            if (testUser == null) {
+                testUser = new User("test001", "Test User", "test@library.com",
+                        "555-9999", "testuser", "test123", UserRole.MEMBER) {};
+                fileRepo.save(testUser);
+                System.out.println("✅ Test user saved to file storage: testuser/test123");
+            }
+
+            System.out.println("=== END FILE I/O DEMONSTRATION ===\n");
+
+        } catch (Exception e) {
+            System.err.println("⚠️ File I/O demonstration failed: " + e.getMessage());
+            System.out.println("⚠️ Continuing with database only...\n");
+        }
     }
 }
