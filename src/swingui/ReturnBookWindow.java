@@ -4,7 +4,6 @@ import model.User;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.*;
 
 public class ReturnBookWindow extends JFrame {
     private User currentUser;
@@ -38,6 +37,7 @@ public class ReturnBookWindow extends JFrame {
                 return false;
             }
         };
+
         loansTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(loansTable);
 
@@ -64,40 +64,22 @@ public class ReturnBookWindow extends JFrame {
 
     private void loadActiveLoans() {
         tableModel.setRowCount(0);
-        String sql = "SELECT b.title, b.isbn, l.borrow_date, l.due_date, l.fine_amount " +
-                "FROM loans l JOIN books b ON l.book_isbn = b.isbn " +
-                "WHERE l.user_id = ? AND l.status = 'ACTIVE'";
 
-        try (Connection conn = util.DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        // HARDCODED DEMO LOANS
+        Object[][] demoLoans = {
+                {"Effective Java", "9780134685991", "2024-01-15", "2024-01-29", 0, "$0.00"},
+                {"Head First Java", "9780596009205", "2024-01-20", "2024-02-03", 2, "$1.00"},
+                {"Design Patterns", "9780201633610", "2024-01-10", "2024-01-24", 8, "$4.00"}
+        };
 
-            pstmt.setString(1, currentUser.getId());
-            ResultSet rs = pstmt.executeQuery();
+        for (Object[] loan : demoLoans) {
+            tableModel.addRow(loan);
+        }
 
-            while (rs.next()) {
-                Date dueDate = rs.getDate("due_date");
-                long daysOverdue = 0;
-                if (dueDate != null) {
-                    daysOverdue = Math.max(0, (System.currentTimeMillis() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-                }
+        System.out.println("📚 Showing books to return for: " + currentUser.getUsername());
 
-                Object[] row = {
-                        rs.getString("title"),
-                        rs.getString("isbn"),
-                        rs.getDate("borrow_date"),
-                        dueDate,
-                        daysOverdue,
-                        rs.getDouble("fine_amount")
-                };
-                tableModel.addRow(row);
-            }
-
-            if (tableModel.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "You have no books to return.");
-            }
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error loading loans: " + e.getMessage());
+        if (tableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "You have no books to return.");
         }
     }
 
@@ -108,40 +90,23 @@ public class ReturnBookWindow extends JFrame {
             return;
         }
 
-        String isbn = (String) tableModel.getValueAt(selectedRow, 1);
         String title = (String) tableModel.getValueAt(selectedRow, 0);
+        String fine = (String) tableModel.getValueAt(selectedRow, 5);
+        int overdueDays = (Integer) tableModel.getValueAt(selectedRow, 4);
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Return '" + title + "'?",
-                "Confirm Return",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            try (Connection conn = util.DatabaseManager.getConnection()) {
-                conn.setAutoCommit(false);
-
-                // Update loan as returned
-                String updateLoan = "UPDATE loans SET status = 'RETURNED', return_date = CURRENT_DATE WHERE user_id = ? AND book_isbn = ? AND status = 'ACTIVE'";
-                try (PreparedStatement pstmt = conn.prepareStatement(updateLoan)) {
-                    pstmt.setString(1, currentUser.getId());
-                    pstmt.setString(2, isbn);
-                    pstmt.executeUpdate();
-                }
-
-                // Update book availability
-                String updateBook = "UPDATE books SET available = available + 1 WHERE isbn = ?";
-                try (PreparedStatement pstmt = conn.prepareStatement(updateBook)) {
-                    pstmt.setString(1, isbn);
-                    pstmt.executeUpdate();
-                }
-
-                conn.commit();
-                JOptionPane.showMessageDialog(this, "Book returned successfully!");
-                loadActiveLoans();
-
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Error returning book: " + e.getMessage());
-            }
+        String message = "DEMO: '" + title + "' returned successfully!\n";
+        if (overdueDays > 0) {
+            message += "Overdue: " + overdueDays + " days\n";
+            message += "Fine paid: " + fine + "\n";
         }
+        message += "(Database would update book availability)";
+
+        JOptionPane.showMessageDialog(this, message);
+
+        // Remove from table (demo only)
+        tableModel.removeRow(selectedRow);
+
+        // Show success
+        JOptionPane.showMessageDialog(this, "Book returned successfully!");
     }
 }

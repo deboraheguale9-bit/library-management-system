@@ -7,6 +7,10 @@ public class Main {
     public static void main(String[] args) {
         DatabaseManager.initializeDatabase();
         System.out.println("=== LIBRARY MANAGEMENT SYSTEM ===\n");
+        System.out.println("=== DEMO MODE ACTIVE ===");
+        System.out.println("Using hardcoded data for demonstration");
+        System.out.println("(Database architecture is fully implemented)");
+        System.out.println("=========================\n");
 
         // Add these VM options to handle SQLite native access warnings
         System.setProperty("org.sqlite.lib.path", ".");

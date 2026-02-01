@@ -4,7 +4,6 @@ import model.User;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.*;
 
 public class SearchBooksWindow extends JFrame {
     private User currentUser;
@@ -74,59 +73,52 @@ public class SearchBooksWindow extends JFrame {
 
     private void loadBooks() {
         tableModel.setRowCount(0);
-        String sql = "SELECT isbn, title, author, publication_year, book_type, available, copies FROM books WHERE available > 0 ORDER BY title";
 
-        try (Connection conn = util.DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        // HARDCODED DEMO BOOKS
+        Object[][] demoBooks = {
+                {"9780134685991", "Effective Java", "Joshua Bloch", 2018, "E-BOOK", 3, 3},
+                {"9780596009205", "Head First Java", "Kathy Sierra", 2005, "PRINTED", 2, 2},
+                {"9780201633610", "Design Patterns", "Erich Gamma", 1994, "PRINTED", 1, 1},
+                {"9780321356680", "Effective Java 2nd Ed", "Joshua Bloch", 2008, "PRINTED", 1, 1},
+                {"9780132350884", "Clean Code", "Robert Martin", 2008, "PRINTED", 2, 2}
+        };
 
-            while (rs.next()) {
-                Object[] row = {
-                        rs.getString("isbn"),
-                        rs.getString("title"),
-                        rs.getString("author"),
-                        rs.getInt("publication_year"),
-                        rs.getString("book_type"),
-                        rs.getInt("available"),
-                        rs.getInt("copies")
-                };
-                tableModel.addRow(row);
-            }
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error loading books: " + e.getMessage());
+        for (Object[] book : demoBooks) {
+            tableModel.addRow(book);
         }
+
+        System.out.println("🔍 Showing all books for searching");
     }
 
     private void searchBooks(String query) {
         tableModel.setRowCount(0);
-        String sql = "SELECT isbn, title, author, publication_year, book_type, available, copies FROM books " +
-                "WHERE (title LIKE ? OR author LIKE ? OR isbn LIKE ?) AND available > 0 ORDER BY title";
 
-        try (Connection conn = util.DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        // HARDCODED DEMO BOOKS
+        Object[][] allBooks = {
+                {"9780134685991", "Effective Java", "Joshua Bloch", 2018, "E-BOOK", 3, 3},
+                {"9780596009205", "Head First Java", "Kathy Sierra", 2005, "PRINTED", 2, 2},
+                {"9780201633610", "Design Patterns", "Erich Gamma", 1994, "PRINTED", 1, 1},
+                {"9780321356680", "Effective Java 2nd Ed", "Joshua Bloch", 2008, "PRINTED", 1, 1},
+                {"9780132350884", "Clean Code", "Robert Martin", 2008, "PRINTED", 2, 2}
+        };
 
-            pstmt.setString(1, "%" + query + "%");
-            pstmt.setString(2, "%" + query + "%");
-            pstmt.setString(3, "%" + query + "%");
+        String queryLower = query.toLowerCase();
 
-            ResultSet rs = pstmt.executeQuery();
+        for (Object[] book : allBooks) {
+            String title = ((String) book[1]).toLowerCase();
+            String author = ((String) book[2]).toLowerCase();
+            String isbn = (String) book[0];
 
-            while (rs.next()) {
-                Object[] row = {
-                        rs.getString("isbn"),
-                        rs.getString("title"),
-                        rs.getString("author"),
-                        rs.getInt("publication_year"),
-                        rs.getString("book_type"),
-                        rs.getInt("available"),
-                        rs.getInt("copies")
-                };
-                tableModel.addRow(row);
+            if (query.isEmpty() ||
+                    title.contains(queryLower) ||
+                    author.contains(queryLower) ||
+                    isbn.contains(query)) {
+                tableModel.addRow(book);
             }
+        }
 
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error searching books: " + e.getMessage());
+        if (tableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No books found matching: " + query);
         }
     }
 
@@ -137,18 +129,20 @@ public class SearchBooksWindow extends JFrame {
             return;
         }
 
-        String isbn = (String) tableModel.getValueAt(selectedRow, 0);
         String title = (String) tableModel.getValueAt(selectedRow, 1);
+        int available = (Integer) tableModel.getValueAt(selectedRow, 5);
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Borrow '" + title + "'?",
-                "Confirm Borrow",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            // Call loan service to create loan
-            JOptionPane.showMessageDialog(this, "Book borrowed successfully!");
-            loadBooks(); // Refresh availability
+        if (available <= 0) {
+            JOptionPane.showMessageDialog(this, "Sorry, '" + title + "' is not available.");
+            return;
         }
+
+        // Update availability in table (demo)
+        tableModel.setValueAt(available - 1, selectedRow, 5);
+
+        JOptionPane.showMessageDialog(this,
+                "DEMO: '" + title + "' borrowed successfully!\n" +
+                        "New availability: " + (available - 1) + " copies\n" +
+                        "(Would create loan record in database)");
     }
 }

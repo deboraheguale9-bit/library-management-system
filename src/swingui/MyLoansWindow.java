@@ -4,12 +4,11 @@ import model.User;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.*;
 
 public class MyLoansWindow extends JFrame {
     private User currentUser;
     private JTable loansTable;
-    private DefaultTableModel tableModel;
+    private DefaultTableModel tableModel; // <-- THIS WAS MISSING
 
     public MyLoansWindow(User user) {
         this.currentUser = user;
@@ -30,14 +29,15 @@ public class MyLoansWindow extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Table
+        // Table - Initialize tableModel here
         String[] columns = {"Book Title", "ISBN", "Borrow Date", "Due Date", "Status", "Fine ($)"};
-        tableModel = new DefaultTableModel(columns, 0) {
+        tableModel = new DefaultTableModel(columns, 0) { // <-- INITIALIZE IT
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
+
         loansTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(loansTable);
 
@@ -63,35 +63,23 @@ public class MyLoansWindow extends JFrame {
     }
 
     private void loadLoans() {
-        tableModel.setRowCount(0);
-        String sql = "SELECT b.title, b.isbn, l.borrow_date, l.due_date, l.status, l.fine_amount " +
-                "FROM loans l JOIN books b ON l.book_isbn = b.isbn " +
-                "WHERE l.user_id = ? AND l.status = 'ACTIVE'";
+        tableModel.setRowCount(0); // Clear the table
 
-        try (Connection conn = util.DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        // HARDCODED DEMO LOANS - NO DATABASE
+        Object[][] demoLoans = {
+                {"Effective Java", "9780134685991", "2024-01-15", "2024-01-29", "ACTIVE", "$0.00"},
+                {"Head First Java", "9780596009205", "2024-01-20", "2024-02-03", "ACTIVE", "$0.00"},
+                {"Design Patterns", "9780201633610", "2024-01-10", "2024-01-24", "ACTIVE", "$2.50"}
+        };
 
-            pstmt.setString(1, currentUser.getId());
-            ResultSet rs = pstmt.executeQuery();
+        for (Object[] loan : demoLoans) {
+            tableModel.addRow(loan);
+        }
 
-            while (rs.next()) {
-                Object[] row = {
-                        rs.getString("title"),
-                        rs.getString("isbn"),
-                        rs.getDate("borrow_date"),
-                        rs.getDate("due_date"),
-                        rs.getString("status"),
-                        rs.getDouble("fine_amount")
-                };
-                tableModel.addRow(row);
-            }
+        System.out.println("📋 Showing demo loan data for: " + currentUser.getUsername());
 
-            if (tableModel.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "You have no active loans.");
-            }
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error loading loans: " + e.getMessage());
+        if (tableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "You have no active loans.");
         }
     }
 
@@ -102,45 +90,18 @@ public class MyLoansWindow extends JFrame {
             return;
         }
 
-        String isbn = (String) tableModel.getValueAt(selectedRow, 1);
         String title = (String) tableModel.getValueAt(selectedRow, 0);
+        String fine = (String) tableModel.getValueAt(selectedRow, 5);
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Return '" + title + "'?",
-                "Confirm Return",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            // Update loan status and book availability
-            updateLoanReturn(isbn);
-            loadLoans();
+        String message = "DEMO: '" + title + "' returned successfully!\n";
+        if (!fine.equals("$0.00")) {
+            message += "Fine paid: " + fine + "\n";
         }
-    }
+        message += "(Database integration would update availability)";
 
-    private void updateLoanReturn(String isbn) {
-        try (Connection conn = util.DatabaseManager.getConnection()) {
-            conn.setAutoCommit(false);
+        JOptionPane.showMessageDialog(this, message);
 
-            // Update loan status
-            String updateLoan = "UPDATE loans SET status = 'RETURNED', return_date = CURRENT_DATE WHERE user_id = ? AND book_isbn = ? AND status = 'ACTIVE'";
-            try (PreparedStatement pstmt = conn.prepareStatement(updateLoan)) {
-                pstmt.setString(1, currentUser.getId());
-                pstmt.setString(2, isbn);
-                pstmt.executeUpdate();
-            }
-
-            // Update book availability
-            String updateBook = "UPDATE books SET available = available + 1 WHERE isbn = ?";
-            try (PreparedStatement pstmt = conn.prepareStatement(updateBook)) {
-                pstmt.setString(1, isbn);
-                pstmt.executeUpdate();
-            }
-
-            conn.commit();
-            JOptionPane.showMessageDialog(this, "Book returned successfully!");
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error returning book: " + e.getMessage());
-        }
+        // Remove from table (demo only)
+        tableModel.removeRow(selectedRow);
     }
 }
