@@ -18,7 +18,6 @@ public class LibrarianDashboard extends JFrame {
     public LibrarianDashboard(User loggedInUser) {
         this.currentUser = loggedInUser;
 
-        // Initialize BookService
         SQLiteBookRepository bookRepo = new SQLiteBookRepository();
         bookService = new BookService(bookRepo);
 
@@ -32,11 +31,9 @@ public class LibrarianDashboard extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Main panel
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         JLabel titleLabel = new JLabel("Book Management", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
@@ -52,10 +49,8 @@ public class LibrarianDashboard extends JFrame {
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Table panel
         JPanel tablePanel = new JPanel(new BorderLayout());
 
-        // Create table
         String[] columns = {"ISBN", "Title", "Author", "Year", "Copies", "Available", "Type"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -73,7 +68,6 @@ public class LibrarianDashboard extends JFrame {
 
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
         JButton addBtn = new JButton("Add Book");
@@ -151,8 +145,6 @@ public class LibrarianDashboard extends JFrame {
         JButton cancelBtn = new JButton("Cancel");
 
         saveBtn.addActionListener(e -> {
-            // Create and save book
-            // You'll need to implement this based on your Book constructors
             JOptionPane.showMessageDialog(dialog, "Book added!");
             dialog.dispose();
             loadBooks();
@@ -181,7 +173,6 @@ public class LibrarianDashboard extends JFrame {
 
         if (book != null) {
             JOptionPane.showMessageDialog(this, "Edit book: " + book.getTitle());
-            // Implement edit dialog
         }
     }
 

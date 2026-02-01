@@ -15,7 +15,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
     private int copies;
 
     public Book(String isbn, String title, String author, int publicationYear, int copies) {
-        setIsbn(isbn);  // Use setters for validation
+        setIsbn(isbn);
         setTitle(title);
         setAuthor(author);
         setPublicationYear(publicationYear);
@@ -23,14 +23,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         this.available = (copies > 0);
     }
 
-    // ====================
-    // PROFILE METHOD FOR SQLITE
-    // ====================
 
-    /**
-     * Returns book data as Map for SQLite database storage
-     * Format matches database column names
-     */
     public Map<String, Object> getProfile() {
         Map<String, Object> profile = new HashMap<>();
         profile.put("isbn", isbn);
@@ -41,18 +34,11 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         profile.put("available", isAvailable() ? 1 : 0); // SQLite uses integers for booleans
         profile.put("book_type", getType()); // "E-Book" or "Printed Book"
 
-        // Subclasses will add their specific fields by overriding this method
+
         return profile;
     }
 
-    // ====================
-    // DATABASE HELPER METHODS
-    // ====================
 
-    /**
-     * Creates a Book object from database result set
-     * Static factory method for repository use
-     */
     public static Book fromMap(Map<String, Object> data) {
         String isbn = (String) data.get("isbn");
         String title = (String) data.get("title");
@@ -61,7 +47,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         int copies = (int) data.get("copies");
         String bookType = (String) data.get("book_type");
 
-        // Determine which subclass to create based on book_type
+
         if ("E-Book".equals(bookType)) {
             double fileSize = (double) data.get("file_size_mb");
             String format = (String) data.get("format");
@@ -82,15 +68,10 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         throw new IllegalArgumentException("Unknown book type: " + bookType);
     }
 
-    // ====================
-    // ABSTRACT METHODS
-    // ====================
     public abstract String getType();
     public abstract String getSpecificDetails();
 
-    // ====================
-    // BOOK DATA METHODS
-    // ====================
+
     public String getDetails() {
         return String.format("\"%s\" by %s (%d) - ISBN: %s [%d copy/copies, %s]",
                 title, author, publicationYear, isbn, copies,
@@ -117,9 +98,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return true;
     }
 
-    // ====================
-    // AVAILABILITY MANAGEMENT
-    // ====================
+
     public void setAvailable(boolean available) {
         this.available = available;
     }
@@ -128,10 +107,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return available && copies > 0;
     }
 
-    /**
-     * Borrow a copy of this book
-     * @return true if successful, false if no copies available
-     */
+
     public boolean borrowCopy() {
         if (copies > 0) {
             copies--;
@@ -141,19 +117,13 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return false;
     }
 
-    /**
-     * Return a copy of this book
-     * @return true if successful
-     */
     public boolean returnCopy() {
         copies++;
         this.available = true;
         return true;
     }
 
-    // ====================
-    // BOOKSEARCHABLE INTERFACE
-    // ====================
+
     @Override
     public List<Book> searchByTitle(String title) {
         List<Book> result = new ArrayList<>();
@@ -180,7 +150,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return null;
     }
 
-    // Default method from BookSearchable interface
+
     @Override
     public List<Book> search(String query) {
         List<Book> results = searchByTitle(query);
@@ -194,9 +164,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return results;
     }
 
-    // ====================
-    // BOOKBORROWABLE INTERFACE
-    // ====================
+
     @Override
     public boolean borrow(Member member) {
         if (isAvailable() && member.canBorrowMore()) {
@@ -226,9 +194,7 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         return getAvailability() ? "Available" : "Not Available";
     }
 
-    // ====================
-    // GETTERS AND SETTERS WITH VALIDATION
-    // ====================
+
     public String getIsbn() {
         return isbn;
     }
@@ -287,17 +253,13 @@ public abstract class Book implements BookSearchable, BookBorrowable {
         this.available = (copies > 0); // Update availability
     }
 
-    // ====================
-    // OVERRIDDEN METHODS
-    // ====================
+
     @Override
     public String toString() {
         return getDetails();
     }
 
-    // ====================
-    // EQUALS & HASHCODE (Important for collections)
-    // ====================
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

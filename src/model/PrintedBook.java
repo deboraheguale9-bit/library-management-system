@@ -1,9 +1,6 @@
 package model;
 
-/**
- * PrintedBook - physical book with shelf location and condition
- * Correctly does NOT implement MediaSearchable (Interface Segregation Principle)
- */
+
 public class PrintedBook extends Book {
     private String shelfLocation;
     private String condition;
@@ -15,7 +12,7 @@ public class PrintedBook extends Book {
                        String shelfLocation, String condition, int edition) {
         super(isbn, title, author, publicationYear, copies);
 
-        // Enhanced validation
+
         if (shelfLocation == null || shelfLocation.trim().isEmpty()) {
             throw new IllegalArgumentException("Shelf location cannot be null or empty");
         }
@@ -24,14 +21,11 @@ public class PrintedBook extends Book {
         }
 
         this.shelfLocation = shelfLocation.trim();
-        updateCondition(condition); // Use validation method
+        updateCondition(condition);
         this.edition = edition;
         this.isReserved = false;
     }
 
-    // ====================
-    // LOCATION METHODS
-    // ====================
     public String getLocation() {
         return shelfLocation;
     }
@@ -45,14 +39,11 @@ public class PrintedBook extends Book {
         this.shelfLocation = newShelfLocation.trim();
     }
 
-    // ====================
-    // CONDITION MANAGEMENT
-    // ====================
     public void updateCondition(String newCondition) {
         String[] validConditions = {"New", "Like New", "Good", "Fair", "Poor"};
         for (String valid : validConditions) {
             if (valid.equalsIgnoreCase(newCondition)) {
-                this.condition = valid; // Standardize to proper case
+                this.condition = valid;
                 return;
             }
         }
@@ -64,9 +55,6 @@ public class PrintedBook extends Book {
         return "Poor".equalsIgnoreCase(condition) || "Fair".equalsIgnoreCase(condition);
     }
 
-    // ====================
-    // RESERVATION SYSTEM
-    // ====================
     public boolean reserve() {
         if (!isReserved && super.isAvailable()) {
             isReserved = true;
@@ -90,15 +78,11 @@ public class PrintedBook extends Book {
     public boolean pickupReservedBook() {
         if (isReserved && super.isAvailable()) {
             isReserved = false;
-            // Actually borrow the book (reduce copies)
-            return borrow(null); // In real app, pass actual member
+            return borrow(null);
         }
         return false;
     }
 
-    // ====================
-    // BOOK ABSTRACT METHODS
-    // ====================
     @Override
     public String getType() {
         return "Printed Book";
@@ -111,29 +95,19 @@ public class PrintedBook extends Book {
                 isReserved ? " (Reserved)" : "");
     }
 
-    // ====================
-    // OVERRIDDEN AVAILABILITY
-    // ====================
     @Override
     public boolean isAvailable() {
-        // A printed book is available if:
-        // 1. It's not reserved AND
-        // 2. The parent Book class says it's available
         return !isReserved && super.isAvailable();
     }
 
     @Override
     public void setAvailable(boolean available) {
-        // If setting to unavailable, also cancel any reservation
         if (!available) {
             isReserved = false;
         }
         super.setAvailable(available);
     }
 
-    // ====================
-    // GETTERS AND SETTERS
-    // ====================
     public String getShelfLocation() {
         return shelfLocation;
     }
@@ -172,9 +146,6 @@ public class PrintedBook extends Book {
         isReserved = reserved;
     }
 
-    // ====================
-    // OVERRIDDEN METHODS
-    // ====================
     @Override
     public String toString() {
         return super.toString() + " [" + getSpecificDetails() + "]";

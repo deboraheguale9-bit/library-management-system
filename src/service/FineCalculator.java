@@ -24,7 +24,6 @@ public class FineCalculator {
         int overdueDays = loan.getOverdueDays();
         double fine = overdueDays * ratePerDay;
 
-        // Apply maximum cap
         if (fine > MAX_FINE) {
             fine = MAX_FINE;
         }
@@ -33,14 +32,12 @@ public class FineCalculator {
     }
 
     public double applyDiscount(Member member, double fine) {
-        // Apply 10% discount for members with no previous fines
         if (member.getTotalFine() == 0) {
             return fine * 0.9;
         }
         return fine;
     }
 
-    // Getters and Setters
     public double getRate() {
         return ratePerDay;
     }

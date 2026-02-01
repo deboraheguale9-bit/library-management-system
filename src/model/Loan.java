@@ -10,7 +10,7 @@ public class Loan {
     private LocalDate returnDate;
     private LoanStatus status;
     private Book book;
-    private Member member;  // We'll create Member.java next
+    private Member member;
 
     public Loan(String loanId, Book book, Member member, int loanPeriodDays) {
         this.loanId = loanId;
@@ -21,11 +21,10 @@ public class Loan {
         this.status = LoanStatus.ACTIVE;
         this.returnDate = null;
 
-        // Mark book as unavailable
         book.setAvailable(false);
     }
 
-    // Methods from UML
+
     public boolean isOverdue() {
         return status == LoanStatus.ACTIVE && LocalDate.now().isAfter(dueDate);
     }
@@ -53,7 +52,6 @@ public class Loan {
         return 0;
     }
 
-    // Getters and Setters
     public String getLoanId() { return loanId; }
     public void setLoanId(String loanId) { this.loanId = loanId; }
 

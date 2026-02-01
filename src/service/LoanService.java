@@ -14,7 +14,6 @@ public class LoanService {
         this.loans = new ArrayList<>();
     }
 
-    // Core loan operations
     public Loan borrowBook(Member member, Book book, int loanPeriodDays) {
         if (!member.canBorrowMore() || !book.isAvailable()) {
             return null;
@@ -34,7 +33,6 @@ public class LoanService {
         loan.closeLoan();
         loans.remove(loan);
 
-        // Calculate fine if overdue
         if (loan.isOverdue()) {
             double fine = fineCalculator.calculateFine(loan);
             loan.getMember().addFine(fine);
@@ -43,7 +41,6 @@ public class LoanService {
         return 0.0;
     }
 
-    // Fine management
     public double calculateFine(Loan loan) {
         return fineCalculator.calculateFine(loan);
     }
@@ -60,7 +57,6 @@ public class LoanService {
         return true;
     }
 
-    // Loan queries
     public List<Loan> getActiveLoans(Member member) {
         List<Loan> result = new ArrayList<>();
         for (Loan loan : loans) {

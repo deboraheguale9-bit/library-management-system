@@ -8,7 +8,7 @@ import java.awt.*;
 public class BorrowBookWindow extends JFrame {
     private User currentUser;
     private JTable booksTable;
-    private DefaultTableModel tableModel; // <-- ADD THIS LINE
+    private DefaultTableModel tableModel;
 
     public BorrowBookWindow(User user) {
         this.currentUser = user;
@@ -24,14 +24,12 @@ public class BorrowBookWindow extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Title
         JLabel titleLabel = new JLabel("Available Books for Borrowing", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Table - Initialize tableModel here
         String[] columns = {"ISBN", "Title", "Author", "Year", "Type", "Available"};
-        tableModel = new DefaultTableModel(columns, 0) { // <-- INITIALIZE HERE
+        tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -41,7 +39,6 @@ public class BorrowBookWindow extends JFrame {
         booksTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(booksTable);
 
-        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton borrowBtn = new JButton("Borrow Selected");
         JButton refreshBtn = new JButton("Refresh");
@@ -56,16 +53,13 @@ public class BorrowBookWindow extends JFrame {
 
         add(mainPanel);
 
-        // Event listeners
         refreshBtn.addActionListener(e -> loadAvailableBooks());
         closeBtn.addActionListener(e -> dispose());
         borrowBtn.addActionListener(e -> borrowSelectedBook());
     }
 
     private void loadAvailableBooks() {
-        tableModel.setRowCount(0); // Clear the table
-
-        // HARDCODED DEMO BOOKS
+        tableModel.setRowCount(0);
         Object[][] demoBooks = {
                 {"9780134685991", "Effective Java", "Joshua Bloch", 2018, "E-BOOK", 3},
                 {"9780596009205", "Head First Java", "Kathy Sierra", 2005, "PRINTED", 2},
@@ -95,7 +89,6 @@ public class BorrowBookWindow extends JFrame {
             return;
         }
 
-        // Update availability in the table (demo)
         tableModel.setValueAt(available - 1, selectedRow, 5);
 
         JOptionPane.showMessageDialog(this,

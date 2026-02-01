@@ -1,9 +1,5 @@
 package model;
 
-/**
- * Base class for items that can be borrowed
- * Only needed if you use MediaBorrowable interface
- */
 public abstract class Item {
     private String itemId;
     private String title;
@@ -17,7 +13,7 @@ public abstract class Item {
 
     public abstract String getItemType();
 
-    // Getters and setters
+
     public String getItemId() { return itemId; }
     public String getTitle() { return title; }
     public boolean isAvailable() { return available; }

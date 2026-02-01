@@ -12,11 +12,9 @@ public class Main {
         System.out.println("(Database architecture is fully implemented)");
         System.out.println("=========================\n");
 
-        // Add these VM options to handle SQLite native access warnings
         System.setProperty("org.sqlite.lib.path", ".");
         System.setProperty("org.sqlite.lib.name", "sqlite-jdbc");
 
-        // Set look and feel
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             System.out.println("✅ System look and feel set");
@@ -24,14 +22,12 @@ public class Main {
             System.out.println("⚠️ Using default look and feel");
         }
 
-        // Start on Swing Event Dispatch Thread
         SwingUtilities.invokeLater(() -> {
             try {
                 System.out.println("🚀 Launching application...");
                 new LoginWindow();
                 System.out.println("✅ Application started successfully");
 
-                // Print test credentials
                 System.out.println("\n=== TEST CREDENTIALS ===");
                 System.out.println("Admin:      admin / admin123");
                 System.out.println("Librarian:  librarian / lib123");

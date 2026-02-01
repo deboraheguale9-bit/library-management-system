@@ -8,11 +8,10 @@ import java.util.*;
 
 public class SQLiteUserRepository implements UserRepository {
 
-    // EMERGENCY FALLBACK: In-memory storage when database fails
     private static final Map<String, User> IN_MEMORY_USERS = new HashMap<>();
 
     static {
-        // Pre-populate with test users
+
         User admin = new User("admin001", "Admin User", "admin@lib.com", "555-0000", "admin", "admin123", UserRole.ADMIN) {};
         User librarian = new User("lib001", "Librarian User", "lib@lib.com", "555-0001", "librarian", "lib123", UserRole.LIBRARIAN) {};
         User member = new User("mem001", "Member User", "member@lib.com", "555-0002", "member", "mem123", UserRole.MEMBER) {};
@@ -21,7 +20,6 @@ public class SQLiteUserRepository implements UserRepository {
         IN_MEMORY_USERS.put("lib001", librarian);
         IN_MEMORY_USERS.put("mem001", member);
 
-        // Also index by username for quick lookup
         IN_MEMORY_USERS.put("admin", admin);
         IN_MEMORY_USERS.put("librarian", librarian);
         IN_MEMORY_USERS.put("member", member);
@@ -33,7 +31,7 @@ public class SQLiteUserRepository implements UserRepository {
 
     @Override
     public void save(User user) {
-        // Just save to memory (no database)
+
         IN_MEMORY_USERS.put(user.getId(), user);
         IN_MEMORY_USERS.put(user.getUsername(), user);
         System.out.println("✅ User saved to memory: " + user.getUsername());
@@ -61,10 +59,8 @@ public class SQLiteUserRepository implements UserRepository {
 
     @Override
     public List<User> findAll() {
-        // Return from memory (avoid duplicates)
         Set<User> uniqueUsers = new HashSet<>();
         for (Map.Entry<String, User> entry : IN_MEMORY_USERS.entrySet()) {
-            // Only add if key is ID (not username)
             if (entry.getKey().equals(entry.getValue().getId())) {
                 uniqueUsers.add(entry.getValue());
             }
@@ -89,6 +85,4 @@ public class SQLiteUserRepository implements UserRepository {
         return true;
     }
 
-    // REMOVE this method since we're not using database
-    // private User resultSetToUser(ResultSet rs) throws SQLException { ... }
 }

@@ -24,12 +24,10 @@ public class ReturnBookWindow extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Title
         JLabel titleLabel = new JLabel("Books to Return", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Table
         String[] columns = {"Book Title", "ISBN", "Borrow Date", "Due Date", "Days Overdue", "Fine ($)"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -41,7 +39,6 @@ public class ReturnBookWindow extends JFrame {
         loansTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(loansTable);
 
-        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton returnBtn = new JButton("Return Selected");
         JButton refreshBtn = new JButton("Refresh");
@@ -55,8 +52,6 @@ public class ReturnBookWindow extends JFrame {
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
-
-        // Event listeners
         refreshBtn.addActionListener(e -> loadActiveLoans());
         closeBtn.addActionListener(e -> dispose());
         returnBtn.addActionListener(e -> returnSelectedBook());
@@ -64,8 +59,6 @@ public class ReturnBookWindow extends JFrame {
 
     private void loadActiveLoans() {
         tableModel.setRowCount(0);
-
-        // HARDCODED DEMO LOANS
         Object[][] demoLoans = {
                 {"Effective Java", "9780134685991", "2024-01-15", "2024-01-29", 0, "$0.00"},
                 {"Head First Java", "9780596009205", "2024-01-20", "2024-02-03", 2, "$1.00"},
@@ -103,10 +96,8 @@ public class ReturnBookWindow extends JFrame {
 
         JOptionPane.showMessageDialog(this, message);
 
-        // Remove from table (demo only)
         tableModel.removeRow(selectedRow);
 
-        // Show success
         JOptionPane.showMessageDialog(this, "Book returned successfully!");
     }
 }

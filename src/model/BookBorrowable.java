@@ -5,7 +5,6 @@ public interface BookBorrowable {
     boolean returnItem();
     boolean getAvailability();
 
-    // Optional default methods
     default boolean canBeBorrowed() {
         return getAvailability();
     }

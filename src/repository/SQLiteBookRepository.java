@@ -11,7 +11,6 @@ import java.util.Map;
 public class SQLiteBookRepository implements BookRepository {
 
     public SQLiteBookRepository() {
-        // Database already initialized
     }
 
     @Override
@@ -165,7 +164,7 @@ public class SQLiteBookRepository implements BookRepository {
     private Book resultSetToBook(ResultSet rs) throws SQLException {
         Map<String, Object> data = new HashMap<>();
 
-        // Common fields
+
         data.put("isbn", rs.getString("isbn"));
         data.put("title", rs.getString("title"));
         data.put("author", rs.getString("author"));
@@ -174,18 +173,18 @@ public class SQLiteBookRepository implements BookRepository {
         data.put("available", rs.getInt("available") == 1);
         data.put("book_type", rs.getString("book_type"));
 
-        // EBook fields
+
         data.put("file_size_mb", rs.getObject("file_size_mb"));
         data.put("format", rs.getObject("format"));
         data.put("download_link", rs.getObject("download_link"));
         data.put("drm_protected", rs.getObject("drm_protected"));
 
-        // PrintedBook fields
+
         data.put("shelf_location", rs.getObject("shelf_location"));
         data.put("condition", rs.getObject("condition"));
         data.put("edition", rs.getObject("edition"));
 
-        // Use Book's factory method
+
         return Book.fromMap(data);
     }
 }

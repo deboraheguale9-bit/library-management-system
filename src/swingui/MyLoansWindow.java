@@ -24,12 +24,9 @@ public class MyLoansWindow extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Title
         JLabel titleLabel = new JLabel("My Current Loans", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
-
-        // Table - Initialize tableModel here
         String[] columns = {"Book Title", "ISBN", "Borrow Date", "Due Date", "Status", "Fine ($)"};
         tableModel = new DefaultTableModel(columns, 0) { // <-- INITIALIZE IT
             @Override
@@ -41,7 +38,6 @@ public class MyLoansWindow extends JFrame {
         loansTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(loansTable);
 
-        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton refreshBtn = new JButton("Refresh");
         JButton returnBtn = new JButton("Return Selected");
@@ -55,17 +51,13 @@ public class MyLoansWindow extends JFrame {
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
-
-        // Event listeners
         refreshBtn.addActionListener(e -> loadLoans());
         closeBtn.addActionListener(e -> dispose());
         returnBtn.addActionListener(e -> returnSelectedLoan());
     }
 
     private void loadLoans() {
-        tableModel.setRowCount(0); // Clear the table
-
-        // HARDCODED DEMO LOANS - NO DATABASE
+        tableModel.setRowCount(0);
         Object[][] demoLoans = {
                 {"Effective Java", "9780134685991", "2024-01-15", "2024-01-29", "ACTIVE", "$0.00"},
                 {"Head First Java", "9780596009205", "2024-01-20", "2024-02-03", "ACTIVE", "$0.00"},
@@ -101,7 +93,6 @@ public class MyLoansWindow extends JFrame {
 
         JOptionPane.showMessageDialog(this, message);
 
-        // Remove from table (demo only)
         tableModel.removeRow(selectedRow);
     }
 }

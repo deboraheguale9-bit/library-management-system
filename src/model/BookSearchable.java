@@ -7,7 +7,6 @@ public interface BookSearchable {
     List<Book> searchByAuthor(String author);
     Book searchByISBN(String isbn);
 
-    // Optional: Combined search
     default List<Book> search(String query) {
         List<Book> results = searchByTitle(query);
         results.addAll(searchByAuthor(query));

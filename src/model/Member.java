@@ -18,7 +18,6 @@ public class Member extends User {
         this.activeLoans = new ArrayList<>();
     }
 
-    // Member-specific methods
     public Loan borrowBook(Book book, int loanPeriodDays) {
         if (canBorrowMore() && book.isAvailable()) {
             String loanId = "LN" + System.currentTimeMillis();
@@ -46,7 +45,6 @@ public class Member extends User {
         return activeLoans.size() < maxBooksAllowed && totalFine == 0;
     }
 
-    // Fine management (will be handled by LoanService later)
     public double getTotalFine() { return totalFine; }
     public void setTotalFine(double totalFine) { this.totalFine = totalFine; }
 
@@ -55,7 +53,6 @@ public class Member extends User {
         this.totalFine = Math.max(0, this.totalFine - amount);
     }
 
-    // Getters and Setters
     public String getMemberId() { return memberId; }
     public void setMemberId(String memberId) { this.memberId = memberId; }
 

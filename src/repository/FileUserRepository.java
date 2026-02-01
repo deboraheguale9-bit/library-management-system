@@ -14,7 +14,6 @@ public class FileUserRepository implements UserRepository {
         this.users = new ArrayList<>();
         loadFromFile();
 
-        // Add default users if no users exist
         if (users.isEmpty()) {
             createDefaultUsers();
         }
@@ -22,15 +21,13 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public void save(User user) {
-        // Check if user already exists
         for (int i = 0; i < users.size(); i++) {
             if (users.get(i).getId().equals(user.getId())) {
-                users.set(i, user); // Update existing
+                users.set(i, user);
                 saveToFile();
                 return;
             }
         }
-        // Add new user
         users.add(user);
         saveToFile();
     }
@@ -131,7 +128,6 @@ public class FileUserRepository implements UserRepository {
     }
 
     private String serializeUser(User user) {
-        // Simple CSV format: id,name,email,mobile,username,password,role
         return String.format("%s,%s,%s,%s,%s,%s,%s",
                 user.getId(),
                 user.getName(),

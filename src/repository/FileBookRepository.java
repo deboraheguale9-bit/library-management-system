@@ -16,7 +16,6 @@ public class FileBookRepository implements BookRepository {
 
     @Override
     public void save(Book book) {
-        // Check if book already exists
         for (int i = 0; i < books.size(); i++) {
             if (books.get(i).getIsbn().equals(book.getIsbn())) {
                 books.set(i, book); // Update existing
@@ -24,7 +23,6 @@ public class FileBookRepository implements BookRepository {
                 return;
             }
         }
-        // Add new book
         books.add(book);
         saveToFile();
     }
@@ -85,7 +83,6 @@ public class FileBookRepository implements BookRepository {
         return result;
     }
 
-    // These will be implemented later
     private void loadFromFile() {
         System.out.println("Loading books from: " + filePath);
         // TODO: Read from CSV/JSON file

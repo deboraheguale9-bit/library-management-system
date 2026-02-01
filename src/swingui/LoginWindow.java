@@ -21,17 +21,14 @@ public class LoginWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Initialize UserService with FileUserRepository
         SQLiteUserRepository userRepository = new SQLiteUserRepository();
         userService = new UserService(userRepository);
 
-        // Main panel with GridBagLayout
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Title
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -39,7 +36,6 @@ public class LoginWindow extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         panel.add(titleLabel, gbc);
 
-        // Username
         gbc.gridwidth = 1;
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -48,7 +44,6 @@ public class LoginWindow extends JFrame {
         usernameField = new JTextField(20);
         panel.add(usernameField, gbc);
 
-        // Password
         gbc.gridx = 0;
         gbc.gridy = 2;
         panel.add(new JLabel("Password:"), gbc);
@@ -56,7 +51,6 @@ public class LoginWindow extends JFrame {
         passwordField = new JPasswordField(20);
         panel.add(passwordField, gbc);
 
-        // Role
         gbc.gridx = 0;
         gbc.gridy = 3;
         panel.add(new JLabel("Role:"), gbc);
@@ -64,7 +58,6 @@ public class LoginWindow extends JFrame {
         roleCombo = new JComboBox<>(UserRole.values());
         panel.add(roleCombo, gbc);
 
-        // Login Button
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
@@ -75,32 +68,27 @@ public class LoginWindow extends JFrame {
         loginBtn.setPreferredSize(new Dimension(100, 35));
         panel.add(loginBtn, gbc);
 
-        // Register Button (for new users)
         gbc.gridy = 5;
         JButton registerBtn = new JButton("Register New User");
         registerBtn.setBackground(new Color(60, 179, 113));
         registerBtn.setForeground(Color.WHITE);
         panel.add(registerBtn, gbc);
 
-        // Status Label
         gbc.gridy = 6;
         JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
         statusLabel.setForeground(Color.RED);
         panel.add(statusLabel, gbc);
 
-        // Login Action
         loginBtn.addActionListener(e -> {
             String username = usernameField.getText().trim();
             String password = new String(passwordField.getPassword());
             UserRole selectedRole = (UserRole) roleCombo.getSelectedItem();
 
-            // Validation
             if (username.isEmpty() || password.isEmpty()) {
                 statusLabel.setText("Please fill in all fields!");
                 return;
             }
 
-            // Authenticate using UserService
             User authenticatedUser = userService.authenticate(username, password);
 
             if (authenticatedUser != null) {
@@ -112,10 +100,8 @@ public class LoginWindow extends JFrame {
                             "Login Successful",
                             JOptionPane.INFORMATION_MESSAGE);
 
-                    // Close login window
                     this.dispose();
 
-                    // Open appropriate dashboard
                     openDashboard(authenticatedUser);
 
                 } else {
@@ -126,12 +112,10 @@ public class LoginWindow extends JFrame {
             }
         });
 
-        // Register Action
         registerBtn.addActionListener(e -> {
             openRegistrationWindow();
         });
 
-        // Add keyboard shortcut (Enter key for login)
         panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke("ENTER"), "login");
         panel.getActionMap().put("login", new AbstractAction() {
@@ -165,7 +149,6 @@ public class LoginWindow extends JFrame {
     }
 
     private void openRegistrationWindow() {
-        // Create registration dialog
         JDialog registerDialog = new JDialog(this, "Register New User", true);
         registerDialog.setSize(400, 500);
         registerDialog.setLayout(new GridBagLayout());
@@ -173,7 +156,6 @@ public class LoginWindow extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Registration form fields
         JTextField nameField = new JTextField(20);
         JTextField emailField = new JTextField(20);
         JTextField phoneField = new JTextField(20);
@@ -218,7 +200,6 @@ public class LoginWindow extends JFrame {
         JButton submitBtn = new JButton("Register");
         registerDialog.add(submitBtn, gbc);
 
-        // Submit registration
         submitBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
             String email = emailField.getText().trim();
@@ -227,7 +208,6 @@ public class LoginWindow extends JFrame {
             String password = new String(regPasswordField.getPassword());
             UserRole role = (UserRole) regRoleCombo.getSelectedItem();
 
-            // Validate inputs
             if (!Validator.isValidName(name)) {
                 JOptionPane.showMessageDialog(registerDialog, "Invalid name format!");
                 return;
@@ -243,15 +223,9 @@ public class LoginWindow extends JFrame {
                 return;
             }
 
-            // Create user (using anonymous class since User is abstract)
             String id = "U" + System.currentTimeMillis();
 
-            // Create concrete user - you need to create LibraryUser class first!
-            // User newUser = new LibraryUser(id, name, email, phone, username, password, role);
-
-            // TEMPORARY: Using anonymous class
             User newUser = new User(id, name, email, phone, username, password, role) {
-                // Anonymous implementation
             };
 
             if (userService.registerUser(newUser)) {
@@ -267,7 +241,6 @@ public class LoginWindow extends JFrame {
     }
 
     public static void main(String[] args) {
-        // For testing the LoginWindow alone
         SwingUtilities.invokeLater(() -> new LoginWindow());
     }
 }

@@ -21,7 +21,6 @@ public class AdminDashboard extends JFrame {
     public AdminDashboard(User loggedInUser) {
         this.currentUser = loggedInUser;
 
-        // Initialize UserService
         String userFilePath = "users.txt";
         FileUserRepository userRepository = new FileUserRepository(userFilePath);
         userService = new UserService(userRepository);
@@ -36,32 +35,26 @@ public class AdminDashboard extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Main panel with BorderLayout
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
         JLabel titleLabel = new JLabel("User Management", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
-        // Welcome label
         JLabel welcomeLabel = new JLabel("Welcome, " + currentUser.getName() + " (Admin)");
         welcomeLabel.setFont(new Font("Arial", Font.ITALIC, 14));
         headerPanel.add(welcomeLabel, BorderLayout.EAST);
 
-        // Logout button
         JButton logoutBtn = new JButton("Logout");
         logoutBtn.addActionListener(e -> logout());
         headerPanel.add(logoutBtn, BorderLayout.WEST);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Table panel
         JPanel tablePanel = new JPanel(new BorderLayout());
 
-        // Create table model using UserTableModel
         tableModel = new UserTableModel(new ArrayList<>());
 
         userTable = new JTable(tableModel);
@@ -75,7 +68,6 @@ public class AdminDashboard extends JFrame {
 
         mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
         JButton addBtn = new JButton("Add User");
@@ -122,10 +114,8 @@ public class AdminDashboard extends JFrame {
     }
 
     private void loadUsers() {
-        // Get all users from service
         List<User> users = userService.getAllUsers();
 
-        // Update table model with users
         tableModel.setUsers(users);
 
         JOptionPane.showMessageDialog(this,
@@ -135,7 +125,6 @@ public class AdminDashboard extends JFrame {
     }
 
     private void addUser() {
-        // Create add user dialog
         JDialog addDialog = new JDialog(this, "Add New User", true);
         addDialog.setSize(400, 500);
         addDialog.setLayout(new GridBagLayout());
@@ -196,7 +185,6 @@ public class AdminDashboard extends JFrame {
         buttonPanel.add(cancelBtn);
         addDialog.add(buttonPanel, gbc);
 
-        // Save button action
         saveBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
             String email = emailField.getText().trim();
@@ -206,7 +194,6 @@ public class AdminDashboard extends JFrame {
             UserRole role = (UserRole) roleCombo.getSelectedItem();
             boolean active = activeCheckBox.isSelected();
 
-            // Validation
             if (!Validator.isValidName(name)) {
                 JOptionPane.showMessageDialog(addDialog, "Invalid name format!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -234,26 +221,21 @@ public class AdminDashboard extends JFrame {
                 return;
             }
 
-            // Check if username already exists
             if (!userService.isUsernameAvailable(username)) {
                 JOptionPane.showMessageDialog(addDialog, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Check if email already exists
             if (!userService.isEmailAvailable(email)) {
                 JOptionPane.showMessageDialog(addDialog, "Email already registered!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Create user (using anonymous class since User is abstract)
             String id = "U" + System.currentTimeMillis();
             User newUser = new User(id, name, email, phone, username, password, role) {
-                // Anonymous implementation
             };
             newUser.setActive(active);
 
-            // Save user
             if (userService.registerUser(newUser)) {
                 JOptionPane.showMessageDialog(addDialog, "User added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 addDialog.dispose();
@@ -263,7 +245,6 @@ public class AdminDashboard extends JFrame {
             }
         });
 
-        // Cancel button action
         cancelBtn.addActionListener(e -> addDialog.dispose());
 
         addDialog.setLocationRelativeTo(this);
@@ -284,7 +265,6 @@ public class AdminDashboard extends JFrame {
             return;
         }
 
-        // Create edit dialog
         JDialog editDialog = new JDialog(this, "Edit User", true);
         editDialog.setSize(400, 500);
         editDialog.setLayout(new GridBagLayout());
@@ -331,7 +311,6 @@ public class AdminDashboard extends JFrame {
         gbc.gridwidth = 2;
         editDialog.add(activeCheckBox, gbc);
 
-        // Password change section
         row++; gbc.gridx = 0; gbc.gridy = row;
         gbc.gridwidth = 2;
         editDialog.add(new JLabel("Change Password (leave empty to keep current):"), gbc);
@@ -351,7 +330,6 @@ public class AdminDashboard extends JFrame {
         buttonPanel.add(cancelBtn);
         editDialog.add(buttonPanel, gbc);
 
-        // Save button action
         saveBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
             String email = emailField.getText().trim();
@@ -361,7 +339,6 @@ public class AdminDashboard extends JFrame {
             boolean active = activeCheckBox.isSelected();
             String newPassword = new String(passwordField.getPassword());
 
-            // Validation
             if (!Validator.isValidName(name)) {
                 JOptionPane.showMessageDialog(editDialog, "Invalid name format!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -377,19 +354,16 @@ public class AdminDashboard extends JFrame {
                 return;
             }
 
-            // Check if username changed and is available
             if (!username.equals(user.getUsername()) && !userService.isUsernameAvailable(username)) {
                 JOptionPane.showMessageDialog(editDialog, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Check if email changed and is available
             if (!email.equals(user.getEmail()) && !userService.isEmailAvailable(email)) {
                 JOptionPane.showMessageDialog(editDialog, "Email already registered!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Update user properties
             user.setName(name);
             user.setEmail(email);
             user.setMobile(phone);
@@ -397,7 +371,6 @@ public class AdminDashboard extends JFrame {
             user.setRole(role);
             user.setActive(active);
 
-            // Change password if provided
             if (!newPassword.isEmpty()) {
                 if (!Validator.isStrongPassword(newPassword)) {
                     JOptionPane.showMessageDialog(editDialog,
@@ -408,7 +381,6 @@ public class AdminDashboard extends JFrame {
                 user.changePassword(newPassword);
             }
 
-            // Save changes
             if (userService.updateUser(user)) {
                 JOptionPane.showMessageDialog(editDialog, "User updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 editDialog.dispose();
@@ -418,7 +390,6 @@ public class AdminDashboard extends JFrame {
             }
         });
 
-        // Cancel button action
         cancelBtn.addActionListener(e -> editDialog.dispose());
 
         editDialog.setLocationRelativeTo(this);
@@ -439,7 +410,6 @@ public class AdminDashboard extends JFrame {
             return;
         }
 
-        // Confirm deletion
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to delete user: " + user.getName() + "?\nThis action cannot be undone.",
                 "Confirm Delete",
@@ -460,10 +430,8 @@ public class AdminDashboard extends JFrame {
         String searchTerm = JOptionPane.showInputDialog(this, "Enter name to search:", "Search Users", JOptionPane.QUESTION_MESSAGE);
 
         if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            // Search users
             List<User> searchResults = userService.searchUsersByName(searchTerm.trim());
 
-            // Update table model with search results
             tableModel.setUsers(searchResults);
 
             JOptionPane.showMessageDialog(this,
@@ -486,12 +454,10 @@ public class AdminDashboard extends JFrame {
         }
     }
 
-    // Main method for testing
     public static void main(String[] args) {
         // For testing only - create a mock admin user
         User mockAdmin = new User("admin001", "Test Admin", "admin@test.com",
                 "123-4567", "admin", "admin123", UserRole.ADMIN) {
-            // Anonymous class
         };
 
         SwingUtilities.invokeLater(() -> new AdminDashboard(mockAdmin));

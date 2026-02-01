@@ -24,7 +24,6 @@ public class SearchBooksWindow extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Search panel
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel searchLabel = new JLabel("Search:");
         JTextField searchField = new JTextField(20);
@@ -36,7 +35,6 @@ public class SearchBooksWindow extends JFrame {
         searchPanel.add(searchBtn);
         searchPanel.add(clearBtn);
 
-        // Table
         String[] columns = {"ISBN", "Title", "Author", "Year", "Type", "Available", "Copies"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -47,7 +45,6 @@ public class SearchBooksWindow extends JFrame {
         booksTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(booksTable);
 
-        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton borrowBtn = new JButton("Borrow Selected");
         JButton closeBtn = new JButton("Close");
@@ -60,8 +57,6 @@ public class SearchBooksWindow extends JFrame {
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
-
-        // Event listeners
         searchBtn.addActionListener(e -> searchBooks(searchField.getText()));
         clearBtn.addActionListener(e -> {
             searchField.setText("");
@@ -74,7 +69,6 @@ public class SearchBooksWindow extends JFrame {
     private void loadBooks() {
         tableModel.setRowCount(0);
 
-        // HARDCODED DEMO BOOKS
         Object[][] demoBooks = {
                 {"9780134685991", "Effective Java", "Joshua Bloch", 2018, "E-BOOK", 3, 3},
                 {"9780596009205", "Head First Java", "Kathy Sierra", 2005, "PRINTED", 2, 2},
@@ -93,7 +87,6 @@ public class SearchBooksWindow extends JFrame {
     private void searchBooks(String query) {
         tableModel.setRowCount(0);
 
-        // HARDCODED DEMO BOOKS
         Object[][] allBooks = {
                 {"9780134685991", "Effective Java", "Joshua Bloch", 2018, "E-BOOK", 3, 3},
                 {"9780596009205", "Head First Java", "Kathy Sierra", 2005, "PRINTED", 2, 2},
@@ -137,7 +130,6 @@ public class SearchBooksWindow extends JFrame {
             return;
         }
 
-        // Update availability in table (demo)
         tableModel.setValueAt(available - 1, selectedRow, 5);
 
         JOptionPane.showMessageDialog(this,

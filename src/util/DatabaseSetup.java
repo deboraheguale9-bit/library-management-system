@@ -18,10 +18,8 @@ public class DatabaseSetup {
 
             System.out.println("Creating tables...");
 
-            // Enable foreign keys
             stmt.execute("PRAGMA foreign_keys = ON");
 
-            // Create users table
             String usersTable = """
                 CREATE TABLE IF NOT EXISTS users (
                     id TEXT PRIMARY KEY,
@@ -36,7 +34,6 @@ public class DatabaseSetup {
                 )
             """;
 
-            // Create books table
             String booksTable = """
                 CREATE TABLE IF NOT EXISTS books (
                     isbn TEXT PRIMARY KEY,
@@ -60,7 +57,6 @@ public class DatabaseSetup {
                 )
             """;
 
-            // Create loans table
             String loansTable = """
                 CREATE TABLE IF NOT EXISTS loans (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,10 +78,8 @@ public class DatabaseSetup {
 
             System.out.println("✅ Tables created: users, books, loans");
 
-            // Insert default admin
             insertDefaultAdmin(conn);
 
-            // Insert sample books
             insertSampleBooks(conn);
 
         } catch (SQLException e) {
@@ -100,7 +94,6 @@ public class DatabaseSetup {
              ResultSet rs = checkStmt.executeQuery(checkSql)) {
 
             if (rs.getInt(1) == 0) {
-                // Create default admin
                 String insertSql = """
                     INSERT INTO users (id, name, email, mobile, username, password_hash, role)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -112,7 +105,7 @@ public class DatabaseSetup {
                     pstmt.setString(3, "admin@library.com");
                     pstmt.setString(4, "555-0000");
                     pstmt.setString(5, "admin");
-                    pstmt.setString(6, "admin123:salt:hash"); // Temporary hash
+                    pstmt.setString(6, "admin123:salt:hash");
                     pstmt.setString(7, "ADMIN");
 
                     pstmt.executeUpdate();
@@ -132,7 +125,6 @@ public class DatabaseSetup {
             if (rs.getInt(1) == 0) {
                 System.out.println("Inserting sample books...");
 
-                // Sample EBook
                 String ebookSql = """
                     INSERT INTO books (isbn, title, author, publication_year, copies, available, book_type,
                                        file_size_mb, format, download_link, drm_protected)
@@ -155,7 +147,6 @@ public class DatabaseSetup {
                     pstmt.executeUpdate();
                 }
 
-                // Sample Printed Book
                 String printedSql = """
                     INSERT INTO books (isbn, title, author, publication_year, copies, available, book_type,
                                        shelf_location, condition, edition)
