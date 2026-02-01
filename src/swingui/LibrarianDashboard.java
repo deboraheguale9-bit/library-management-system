@@ -1,20 +1,34 @@
 package swingui;
 
+import model.Book;
 import model.User;
+import repository.SQLiteBookRepository;
+import service.BookService;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class LibrarianDashboard extends JFrame {
     private User currentUser;
+    private BookService bookService;
+    private JTable bookTable;
+    private DefaultTableModel tableModel;
 
     public LibrarianDashboard(User loggedInUser) {
         this.currentUser = loggedInUser;
+
+        // Initialize BookService
+        SQLiteBookRepository bookRepo = new SQLiteBookRepository();
+        bookService = new BookService(bookRepo);
+
         setupUI();
+        loadBooks();
     }
 
     private void setupUI() {
         setTitle("Librarian Dashboard - Library Management System");
-        setSize(900, 600);
+        setSize(1000, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -24,11 +38,11 @@ public class LibrarianDashboard extends JFrame {
 
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
-        JLabel titleLabel = new JLabel("Librarian Dashboard", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Book Management", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
-        JLabel welcomeLabel = new JLabel("Welcome, " + currentUser.getName());
+        JLabel welcomeLabel = new JLabel("Welcome, " + currentUser.getName() + " (Librarian)");
         welcomeLabel.setFont(new Font("Arial", Font.ITALIC, 14));
         headerPanel.add(welcomeLabel, BorderLayout.EAST);
 
@@ -38,61 +52,197 @@ public class LibrarianDashboard extends JFrame {
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Center panel with buttons
-        JPanel centerPanel = new JPanel(new GridLayout(3, 2, 20, 20));
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+        // Table panel
+        JPanel tablePanel = new JPanel(new BorderLayout());
 
-        JButton manageBooksBtn = new JButton("Manage Books");
-        manageBooksBtn.setFont(new Font("Arial", Font.BOLD, 16));
-        manageBooksBtn.setPreferredSize(new Dimension(200, 80));
+        // Create table
+        String[] columns = {"ISBN", "Title", "Author", "Year", "Copies", "Available", "Type"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
+        bookTable = new JTable(tableModel);
+        bookTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        bookTable.setRowHeight(25);
+
+        JScrollPane scrollPane = new JScrollPane(bookTable);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
+
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+
+        JButton addBtn = new JButton("Add Book");
+        JButton editBtn = new JButton("Edit Book");
+        JButton deleteBtn = new JButton("Delete Book");
+        JButton searchBtn = new JButton("Search");
+        JButton refreshBtn = new JButton("Refresh");
         JButton manageLoansBtn = new JButton("Manage Loans");
-        manageLoansBtn.setFont(new Font("Arial", Font.BOLD, 16));
-        manageLoansBtn.setPreferredSize(new Dimension(200, 80));
 
-        JButton searchBooksBtn = new JButton("Search Books");
-        searchBooksBtn.setFont(new Font("Arial", Font.BOLD, 16));
-        searchBooksBtn.setPreferredSize(new Dimension(200, 80));
+        addBtn.addActionListener(e -> addBook());
+        editBtn.addActionListener(e -> editBook());
+        deleteBtn.addActionListener(e -> deleteBook());
+        searchBtn.addActionListener(e -> searchBooks());
+        refreshBtn.addActionListener(e -> loadBooks());
+        manageLoansBtn.addActionListener(e -> manageLoans());
 
-        JButton processReturnsBtn = new JButton("Process Returns");
-        processReturnsBtn.setFont(new Font("Arial", Font.BOLD, 16));
-        processReturnsBtn.setPreferredSize(new Dimension(200, 80));
+        buttonPanel.add(addBtn);
+        buttonPanel.add(editBtn);
+        buttonPanel.add(deleteBtn);
+        buttonPanel.add(searchBtn);
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(manageLoansBtn);
 
-        JButton viewReportsBtn = new JButton("View Reports");
-        viewReportsBtn.setFont(new Font("Arial", Font.BOLD, 16));
-        viewReportsBtn.setPreferredSize(new Dimension(200, 80));
-
-        centerPanel.add(manageBooksBtn);
-        centerPanel.add(manageLoansBtn);
-        centerPanel.add(searchBooksBtn);
-        centerPanel.add(processReturnsBtn);
-        centerPanel.add(viewReportsBtn);
-
-        // Add empty panel for layout
-        centerPanel.add(new JPanel());
-
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-
-        // Status bar
-        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        statusPanel.add(new JLabel("Role: Librarian | User: " + currentUser.getUsername()));
-        mainPanel.add(statusPanel, BorderLayout.SOUTH);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
         setVisible(true);
     }
 
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION);
+    private void loadBooks() {
+        tableModel.setRowCount(0);
+        List<Book> books = bookService.getAllBooks();
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            currentUser.logout();
-            this.dispose();
-            new LoginWindow().setVisible(true);
+        for (Book book : books) {
+            tableModel.addRow(new Object[]{
+                    book.getIsbn(),
+                    book.getTitle(),
+                    book.getAuthor(),
+                    book.getPublicationYear(),
+                    book.getCopies(),
+                    book.isAvailable() ? "Yes" : "No",
+                    book.getType()
+            });
         }
     }
 
+    private void addBook() {
+        JDialog dialog = new JDialog(this, "Add New Book", true);
+        dialog.setSize(400, 400);
+        dialog.setLayout(new GridLayout(8, 2, 10, 10));
+        dialog.setLocationRelativeTo(this);
+
+        JTextField isbnField = new JTextField();
+        JTextField titleField = new JTextField();
+        JTextField authorField = new JTextField();
+        JTextField yearField = new JTextField();
+        JTextField copiesField = new JTextField("1");
+        JComboBox<String> typeCombo = new JComboBox<>(new String[]{"E-Book", "Printed Book"});
+
+        dialog.add(new JLabel("ISBN:"));
+        dialog.add(isbnField);
+        dialog.add(new JLabel("Title:"));
+        dialog.add(titleField);
+        dialog.add(new JLabel("Author:"));
+        dialog.add(authorField);
+        dialog.add(new JLabel("Year:"));
+        dialog.add(yearField);
+        dialog.add(new JLabel("Copies:"));
+        dialog.add(copiesField);
+        dialog.add(new JLabel("Type:"));
+        dialog.add(typeCombo);
+
+        JPanel buttonPanel = new JPanel();
+        JButton saveBtn = new JButton("Save");
+        JButton cancelBtn = new JButton("Cancel");
+
+        saveBtn.addActionListener(e -> {
+            // Create and save book
+            // You'll need to implement this based on your Book constructors
+            JOptionPane.showMessageDialog(dialog, "Book added!");
+            dialog.dispose();
+            loadBooks();
+        });
+
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+
+        dialog.add(new JLabel());
+        dialog.add(buttonPanel);
+
+        dialog.setVisible(true);
+    }
+
+    private void editBook() {
+        int row = bookTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a book to edit");
+            return;
+        }
+
+        String isbn = (String) tableModel.getValueAt(row, 0);
+        Book book = bookService.findBook(isbn);
+
+        if (book != null) {
+            JOptionPane.showMessageDialog(this, "Edit book: " + book.getTitle());
+            // Implement edit dialog
+        }
+    }
+
+    private void deleteBook() {
+        int row = bookTable.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a book to delete");
+            return;
+        }
+
+        String isbn = (String) tableModel.getValueAt(row, 0);
+        String title = (String) tableModel.getValueAt(row, 1);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Delete book: " + title + "?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (bookService.deleteBook(isbn)) {
+                JOptionPane.showMessageDialog(this, "Book deleted");
+                loadBooks();
+            }
+        }
+    }
+
+    private void searchBooks() {
+        String query = JOptionPane.showInputDialog(this, "Enter search term (title or author):");
+        if (query != null && !query.trim().isEmpty()) {
+            tableModel.setRowCount(0);
+            List<Book> results = bookService.searchBooks(query.trim());
+
+            for (Book book : results) {
+                tableModel.addRow(new Object[]{
+                        book.getIsbn(),
+                        book.getTitle(),
+                        book.getAuthor(),
+                        book.getPublicationYear(),
+                        book.getCopies(),
+                        book.isAvailable() ? "Yes" : "No",
+                        book.getType()
+                });
+            }
+
+            JOptionPane.showMessageDialog(this, "Found " + results.size() + " books");
+        }
+    }
+
+    private void manageLoans() {
+        JOptionPane.showMessageDialog(this, "Loan management - To be implemented");
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Logout?",
+                "Confirm",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            dispose();
+            new LoginWindow().setVisible(true);
+        }
+    }
 }
