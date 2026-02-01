@@ -28,13 +28,9 @@ public class SQLiteUserRepository implements UserRepository {
     }
 
     public SQLiteUserRepository() {
-        try {
-            DatabaseManager.initializeDatabase();
-            System.out.println("✅ Database initialized");
-        } catch (Exception e) {
-            System.err.println("⚠️  Database initialization failed, using in-memory fallback");
-            System.err.println("⚠️  Error: " + e.getMessage());
-        }
+        // REMOVED: DatabaseManager.initializeDatabase();
+        // Database is already initialized in Main.java
+        System.out.println("✅ User repository ready (database + fallback)");
     }
 
     @Override
@@ -116,7 +112,6 @@ public class SQLiteUserRepository implements UserRepository {
         }
         return null;
     }
-
     @Override
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
