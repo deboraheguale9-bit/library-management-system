@@ -1,0 +1,3 @@
+admin001,System Administrator,admin@library.com,555-0000,admin,admin123,ADMIN
+lib001,Librarian User,librarian@library.com,555-0001,librarian,lib123,LIBRARIAN
+mem001,Member User,member@library.com,555-0002,member,mem123,MEMBER

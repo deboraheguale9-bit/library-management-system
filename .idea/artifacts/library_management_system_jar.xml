@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="library-management-system:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/library_management_system_jar</output-path>
+    <root id="archive" name="library-management-system.jar">
+      <element id="module-output" name="library-management-system" />
+      <element id="library" level="project" name="h2-2.2.224" />
+    </root>
+  </artifact>
+</component>
