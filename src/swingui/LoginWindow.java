@@ -3,6 +3,7 @@ package swingui;
 import model.User;
 import model.UserRole;
 import repository.FileUserRepository;
+import repository.SQLiteUserRepository;
 import service.UserService;
 import util.Validator;
 import javax.swing.*;
@@ -21,8 +22,7 @@ public class LoginWindow extends JFrame {
         setLocationRelativeTo(null);
 
         // Initialize UserService with FileUserRepository
-        String userFilePath = "users.txt";
-        FileUserRepository userRepository = new FileUserRepository(userFilePath);
+        SQLiteUserRepository userRepository = new SQLiteUserRepository();
         userService = new UserService(userRepository);
 
         // Main panel with GridBagLayout

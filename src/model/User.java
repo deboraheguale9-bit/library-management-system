@@ -40,7 +40,9 @@ public abstract class User {
         this.email = email;
         this.mobile = mobile;
         this.username = username;
-        this.passwordHash = hashPassword(plainPassword);  // Hash on creation
+        // DEMO MODE: Store password directly (not hashed)
+// this.passwordHash = hashPassword(plainPassword);  // Real hashing
+        this.passwordHash = plainPassword;  // Simple for demo  // Hash on creation
         this.role = role;
         this.isActive = true;  // New users are active by default
     }
@@ -53,12 +55,42 @@ public abstract class User {
      * @return true if login successful, false otherwise
      */
     public boolean login(String passwordAttempt) {
-        if (!isActive) {
-            return false;  // Inactive users cannot log in
-        }
-        return verifyPassword(passwordAttempt, passwordHash);
-    }
+        System.out.println("[LOGIN DEBUG] User: " + username);
+        System.out.println("[LOGIN DEBUG] Attempt: '" + passwordAttempt + "'");
+        System.out.println("[LOGIN DEBUG] Stored hash: '" + passwordHash + "'");
 
+        if (!isActive) {
+            System.out.println("[LOGIN DEBUG] User inactive");
+            return false;
+        }
+
+        // METHOD 1: If passwordHash is simple (like "admin123"), direct compare
+        if (!passwordHash.contains(":") || passwordHash.split(":").length < 2) {
+            System.out.println("[LOGIN DEBUG] Simple password comparison");
+            boolean simpleMatch = passwordHash.equals(passwordAttempt);
+            System.out.println("[LOGIN DEBUG] Result: " + simpleMatch);
+            return simpleMatch;
+        }
+
+        // METHOD 2: If passwordHash is "password:something" format (demo users)
+        if (passwordHash.contains(":")) {
+            String[] parts = passwordHash.split(":");
+            if (parts.length >= 1) {
+                String storedPassword = parts[0]; // First part is the password
+                System.out.println("[LOGIN DEBUG] First part comparison: '" + storedPassword + "'");
+                boolean match = storedPassword.equals(passwordAttempt);
+                System.out.println("[LOGIN DEBUG] Result: " + match);
+                return match;
+            }
+        }
+
+        // METHOD 3: Real hash verification (for production)
+        System.out.println("[LOGIN DEBUG] Trying hash verification...");
+        boolean hashMatch = verifyPassword(passwordAttempt, passwordHash);
+        System.out.println("[LOGIN DEBUG] Hash verification result: " + hashMatch);
+
+        return hashMatch;
+    }
     /**
      * Logs out the user (basic implementation)
      */

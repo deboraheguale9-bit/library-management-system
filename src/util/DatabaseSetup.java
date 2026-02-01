@@ -3,7 +3,7 @@ package util;
 import java.sql.*;
 
 public class DatabaseSetup {
-    private static final String DB_URL = "jdbc:sqlite:library.db";
+    private static final String DB_URL = "jdbc:derby:librarydb;create=true";
 
     public static void main(String[] args) {
         System.out.println("=== DATABASE SETUP ===");
