@@ -97,39 +97,90 @@ public class BorrowBookWindow extends JFrame {
         String isbn = (String) tableModel.getValueAt(selectedRow, 0);
         String title = (String) tableModel.getValueAt(selectedRow, 1);
 
+        // Check if user already has this book borrowed
+        if (hasActiveLoan(isbn)) {
+            JOptionPane.showMessageDialog(this, "You already have this book borrowed!");
+            return;
+        }
+
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Borrow '" + title + "' for 14 days?",
                 "Confirm Borrow",
                 JOptionPane.YES_NO_OPTION);
-
         if (confirm == JOptionPane.YES_OPTION) {
-            try (Connection conn = util.DatabaseManager.getConnection()) {
-                conn.setAutoCommit(false);
-
-                // Create loan record
-                String insertLoan = "INSERT INTO loans (user_id, book_isbn, borrow_date, due_date, status) VALUES (?, ?, CURRENT_DATE, DATEADD('DAY', 14, CURRENT_DATE), 'ACTIVE')";
-                try (PreparedStatement pstmt = conn.prepareStatement(insertLoan)) {
-                    pstmt.setString(1, currentUser.getId());
-                    pstmt.setString(2, isbn);
-                    pstmt.executeUpdate();
-                }
-
-                // Update book availability
-                String updateBook = "UPDATE books SET available = available - 1 WHERE isbn = ? AND available > 0";
-                try (PreparedStatement pstmt = conn.prepareStatement(updateBook)) {
-                    pstmt.setString(1, isbn);
-                    int updated = pstmt.executeUpdate();
-                    if (updated == 0) {
-                        throw new SQLException("Book no longer available");
-                    }
-                }
-
-                conn.commit();
+            boolean success = createLoan(isbn);
+            if (success) {
                 JOptionPane.showMessageDialog(this, "Book borrowed successfully! Due in 14 days.");
                 loadAvailableBooks();
+            }
+        }
+    }
 
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Error borrowing book: " + e.getMessage());
+    private boolean hasActiveLoan(String isbn) {
+        String sql = "SELECT COUNT(*) FROM loans WHERE user_id = ? AND book_isbn = ? AND status = 'ACTIVE'";
+
+        try (Connection conn = util.DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, currentUser.getId());
+            pstmt.setString(2, isbn);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error checking loan: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private boolean createLoan(String isbn) {
+        Connection conn = null;
+        try {
+            conn = util.DatabaseManager.getConnection();
+            conn.setAutoCommit(false);
+
+            // 1. Create loan record
+            String insertLoan = "INSERT INTO loans (user_id, book_isbn, borrow_date, due_date, status) VALUES (?, ?, CURRENT_DATE, DATEADD('DAY', 14, CURRENT_DATE), 'ACTIVE')";
+            try (PreparedStatement pstmt = conn.prepareStatement(insertLoan)) {
+                pstmt.setString(1, currentUser.getId());
+                pstmt.setString(2, isbn);
+                pstmt.executeUpdate();
+            }
+
+            // 2. Update book availability
+            String updateBook = "UPDATE books SET available = available - 1 WHERE isbn = ? AND available > 0";
+            try (PreparedStatement pstmt = conn.prepareStatement(updateBook)) {
+                pstmt.setString(1, isbn);
+                int updated = pstmt.executeUpdate();
+                if (updated == 0) {
+                    throw new SQLException("Book no longer available or not found");
+                }
+            }
+
+            conn.commit();
+            return true;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            JOptionPane.showMessageDialog(this, "Error borrowing book: " + e.getMessage());
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
