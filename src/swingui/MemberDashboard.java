@@ -44,15 +44,19 @@ public class MemberDashboard extends JFrame {
 
         JButton searchBooksBtn = new JButton("Search Books");
         searchBooksBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        searchBooksBtn.addActionListener(e -> openSearchBooks());
 
         JButton viewLoansBtn = new JButton("My Loans");
         viewLoansBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        viewLoansBtn.addActionListener(e -> openMyLoans());
 
         JButton borrowBookBtn = new JButton("Borrow Book");
         borrowBookBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        borrowBookBtn.addActionListener(e -> openBorrowBook());
 
         JButton returnBookBtn = new JButton("Return Book");
         returnBookBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        returnBookBtn.addActionListener(e -> openReturnBook());
 
         centerPanel.add(searchBooksBtn);
         centerPanel.add(viewLoansBtn);
@@ -63,6 +67,22 @@ public class MemberDashboard extends JFrame {
 
         add(mainPanel);
         setVisible(true);
+    }
+
+    private void openSearchBooks() {
+        new SearchBooksWindow(currentUser).setVisible(true);
+    }
+
+    private void openMyLoans() {
+        new MyLoansWindow(currentUser).setVisible(true);
+    }
+
+    private void openBorrowBook() {
+        new BorrowBookWindow(currentUser).setVisible(true);
+    }
+
+    private void openReturnBook() {
+        new ReturnBookWindow(currentUser).setVisible(true);
     }
 
     private void logout() {
