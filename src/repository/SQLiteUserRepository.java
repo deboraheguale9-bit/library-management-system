@@ -227,3 +227,4 @@ public class SQLiteUserRepository implements UserRepository {
         return user;
     }
 }
+
