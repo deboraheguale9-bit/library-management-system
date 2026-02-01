@@ -5,6 +5,16 @@ import java.sql.*;
 public class DatabaseManager {
     private static final String DB_URL = "jdbc:h2:mem:librarydb;DB_CLOSE_DELAY=-1";
 
+    static {
+        // Load H2 driver
+        try {
+            Class.forName("org.h2.Driver");
+            System.out.println("✅ H2 Driver loaded");
+        } catch (ClassNotFoundException e) {
+            System.err.println("❌ H2 Driver not found");
+        }
+    }
+
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
@@ -30,7 +40,7 @@ public class DatabaseManager {
                 )
             """);
 
-            // Create BOOKS table (THIS IS MISSING!)
+            // Create BOOKS table
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS books (
                     isbn VARCHAR(20) PRIMARY KEY,
@@ -95,7 +105,7 @@ public class DatabaseManager {
 
         } catch (Exception e) {
             System.err.println("⚠️  Database error: " + e.getMessage());
-            // Don't exit - use fallback
+            e.printStackTrace();
         }
     }
 }
