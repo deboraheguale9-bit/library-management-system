@@ -2,8 +2,8 @@ package repository;
 
 import model.User;
 import model.UserRole;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 public class FileUserRepository implements UserRepository {
     private List<User> users;
@@ -14,9 +14,9 @@ public class FileUserRepository implements UserRepository {
         this.users = new ArrayList<>();
         loadFromFile();
 
-        // Add default admin if no users exist
+        // Add default users if no users exist
         if (users.isEmpty()) {
-            createDefaultAdmin();
+            createDefaultUsers();
         }
     }
 
@@ -85,32 +85,81 @@ public class FileUserRepository implements UserRepository {
         return false;
     }
 
-    private void createDefaultAdmin() {
-        // Create a default admin user (password: admin123)
-        try {
-            Class<?> adminClass = Class.forName("model.Admin");
-            User defaultAdmin = (User) adminClass.getConstructor(
-                    String.class, String.class, String.class, String.class,
-                    String.class, String.class, int.class
-            ).newInstance(
-                    "admin001", "System Administrator", "admin@library.com",
-                    "555-0000", "admin", "admin123", 1
-            );
-            users.add(defaultAdmin);
-            saveToFile();
-            System.out.println("✅ Created default admin user");
-        } catch (Exception e) {
-            System.out.println("⚠️ Could not create default admin: " + e.getMessage());
-        }
+    private void createDefaultUsers() {
+        // SIMPLE hardcoded users (no reflection needed)
+        users.add(new User("admin001", "System Administrator", "admin@library.com",
+                "555-0000", "admin", "admin123", UserRole.ADMIN) {});
+        users.add(new User("lib001", "Librarian User", "librarian@library.com",
+                "555-0001", "librarian", "lib123", UserRole.LIBRARIAN) {});
+        users.add(new User("mem001", "Member User", "member@library.com",
+                "555-0002", "member", "mem123", UserRole.MEMBER) {});
+
+        saveToFile();
+        System.out.println("✅ Created default users in file");
     }
 
     private void loadFromFile() {
-        System.out.println("Loading users from: " + filePath);
-        // TODO: Implement CSV/JSON reading
+        File file = new File(filePath);
+        if (!file.exists()) {
+            System.out.println("⚠️ File doesn't exist, will create: " + filePath);
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                User user = parseUser(line);
+                if (user != null) {
+                    users.add(user);
+                }
+            }
+            System.out.println("✅ Loaded " + users.size() + " users from: " + filePath);
+        } catch (IOException e) {
+            System.err.println("❌ Error loading file: " + e.getMessage());
+        }
     }
 
     private void saveToFile() {
-        System.out.println("Saving users to: " + filePath);
-        // TODO: Implement CSV/JSON writing
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
+            for (User user : users) {
+                writer.println(serializeUser(user));
+            }
+            System.out.println("✅ Saved " + users.size() + " users to: " + filePath);
+        } catch (IOException e) {
+            System.err.println("❌ Error saving file: " + e.getMessage());
+        }
+    }
+
+    private String serializeUser(User user) {
+        // Simple CSV format: id,name,email,mobile,username,password,role
+        return String.format("%s,%s,%s,%s,%s,%s,%s",
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getMobile(),
+                user.getUsername(),
+                user.getPasswordHash(),
+                user.getRole().toString()
+        );
+    }
+
+    private User parseUser(String line) {
+        try {
+            String[] parts = line.split(",");
+            if (parts.length == 7) {
+                return new User(
+                        parts[0], // id
+                        parts[1], // name
+                        parts[2], // email
+                        parts[3], // mobile
+                        parts[4], // username
+                        parts[5], // password
+                        UserRole.valueOf(parts[6]) // role
+                ) {};
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error parsing user line: " + line);
+        }
+        return null;
     }
 }
