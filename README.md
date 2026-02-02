@@ -121,5 +121,4 @@ This project is developed for educational purposes as part of Object-Oriented Pr
 
 ---
 
-*Last Updated: [Current Date]*  
-*Version: 1.0.0*
+
